@@ -1,4 +1,5 @@
 const pool = require('../db');
+const stripe = require('../config/stripe');
 
 // GET USER PURCHASES
 const getPurchases = async (req, res) => {
@@ -20,11 +21,79 @@ const getPurchases = async (req, res) => {
   }
 };
 
-// MAKE PURCHASE (checkout cart)
-const makePurchase = async (req, res) => {
+// CREATE PAYMENT INTENT (Step 1 of checkout)
+const createPaymentIntent = async (req, res) => {
   const user_id = req.user.id;
   try {
     // Get all items in cart
+    const cartItems = await pool.query(
+      `SELECT cart.game_id, games.price, games.title
+       FROM cart
+       JOIN games ON cart.game_id = games.id
+       WHERE cart.user_id = $1`,
+      [user_id]
+    );
+
+    if (cartItems.rows.length === 0) {
+      return res.status(400).json({ message: 'Cart is empty' });
+    }
+
+    // Calculate total in cents (Stripe uses cents)
+    const total = cartItems.rows.reduce(
+      (sum, item) => sum + parseFloat(item.price), 0
+    );
+    const totalCents = Math.round(total * 100);
+
+    // Create Stripe Payment Intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalCents,
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      },
+      metadata: {
+        user_id: user_id.toString(),
+        items: cartItems.rows.map(i => i.title).join(', ')
+      }
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      amount: total.toFixed(2),
+      items: cartItems.rows
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// CONFIRM PURCHASE (Step 2 - after payment success)
+const confirmPurchase = async (req, res) => {
+  const user_id = req.user.id;
+  const { payment_intent_id } = req.body;
+
+  try {
+    // Verify payment with Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      payment_intent_id
+    );
+
+    // Check payment was successful
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).json({
+        message: `Payment not completed. Status: ${paymentIntent.status}`
+      });
+    }
+
+    // Check payment belongs to this user
+    if (paymentIntent.metadata.user_id !== user_id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized payment' });
+    }
+
+    // Get cart items
     const cartItems = await pool.query(
       `SELECT cart.game_id, games.price
        FROM cart
@@ -37,7 +106,7 @@ const makePurchase = async (req, res) => {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
-    // Insert each cart item into purchases
+    // Insert purchases
     for (const item of cartItems.rows) {
       await pool.query(
         'INSERT INTO purchases (user_id, game_id, amount) VALUES ($1, $2, $3)',
@@ -45,10 +114,8 @@ const makePurchase = async (req, res) => {
       );
     }
 
-    // Clear the cart after purchase
-    await pool.query(
-      'DELETE FROM cart WHERE user_id = $1', [user_id]
-    );
+    // Clear cart
+    await pool.query('DELETE FROM cart WHERE user_id = $1', [user_id]);
 
     // Calculate total
     const total = cartItems.rows.reduce(
@@ -58,12 +125,14 @@ const makePurchase = async (req, res) => {
     res.status(201).json({
       message: 'Purchase successful',
       items_purchased: cartItems.rows.length,
-      total_amount: total.toFixed(2)
+      total_amount: total.toFixed(2),
+      payment_intent_id
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-module.exports = { getPurchases, makePurchase };
+module.exports = { getPurchases, createPaymentIntent, confirmPurchase };

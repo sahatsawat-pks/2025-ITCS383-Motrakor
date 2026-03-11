@@ -3,10 +3,12 @@ const router = express.Router();
 const authenticateToken = require('../middleware/auth');
 const {
   getPurchases,
-  makePurchase
+  createPaymentIntent,
+  confirmPurchase
 } = require('../controllers/purchasesController');
 
 router.get('/', authenticateToken, getPurchases);
-router.post('/', authenticateToken, makePurchase);
+router.post('/create-payment-intent', authenticateToken, createPaymentIntent);
+router.post('/confirm', authenticateToken, confirmPurchase);
 
 module.exports = router;
