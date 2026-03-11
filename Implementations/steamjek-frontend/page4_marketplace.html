@@ -829,14 +829,6 @@
       <a class="nav-link" href="page3_cart.html"><span class="nav-icon">🛒</span>Cart<span
           class="nav-badge" id="cart-badge">0</span></a>
       <div class="sidebar-foot" id="user-context"></div>
-        <div class="user-pill" onclick="Auth.logout()">
-          <div class="u-av">??</div>
-          <div>
-            <div class="u-name">Not Logged In</div>
-            <div class="u-bal">Login to trade</div>
-          </div>
-        </div>
-      </div>
     </nav>
     <div class="main">
       <div class="topbar">
@@ -891,11 +883,20 @@
         <!-- ITEMS GRID -->
         <div class="items-grid" id="items-grid"></div>
 
-        <!-- MY LISTINGS -->
-        <div style="margin-top:36px" id="my-listings-section">
-          <div class="list-section-title">📦 My Active Listings</div>
-          <div id="my-listings-grid">
-            <div style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Loading your listings...</div>
+        <!-- MY LISTINGS & INVENTORY -->
+        <div style="margin-top:36px; display:flex; gap:24px; flex-wrap: wrap;">
+          <div id="my-listings-section" style="flex:1; min-width: 300px;">
+            <div class="list-section-title">📦 My Active Listings</div>
+            <div id="my-listings-grid">
+              <div style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Loading your listings...</div>
+            </div>
+          </div>
+          
+          <div id="my-inventory-section" style="flex:1; min-width: 300px; display:none;">
+            <div class="list-section-title">🎒 My Inventory</div>
+            <div id="my-inventory-grid">
+              <div style="color:var(--muted);font-size:13px;padding:20px;text-align:center">Loading your inventory...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -935,14 +936,20 @@
     let curFilter = 'all';
 
     async function init() {
+      if (Auth.isAuthenticated()) {
+        await Auth.refreshUser(); // Get latest balance
+      }
       updateSidebarUser();
       loadListings();
       if (Auth.isAuthenticated()) {
         loadMyListings();
         loadMyInventory();
+        document.getElementById('my-inventory-section').style.display = 'block';
       } else {
         const mySect = document.getElementById('my-listings-section');
         if (mySect) mySect.style.display = 'none';
+        const invSect = document.getElementById('my-inventory-section');
+        if (invSect) invSect.style.display = 'none';
       }
     }
 
@@ -984,15 +991,29 @@
 
     async function loadMyInventory() {
       const select = document.getElementById('item-to-sell');
+      const invGrid = document.getElementById('my-inventory-grid');
       if (!select) return;
       const items = await apiFetch('/market/my-items');
       if (items) {
         MY_ITEMS = items;
         if (items.length === 0) {
           select.innerHTML = '<option value="">No sellable items found</option>';
+          if (invGrid) invGrid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center">You have no items in your inventory.</div>';
           return;
         }
-        select.innerHTML = items.map(it => `<option value="${it.id}">${it.name} (${it.game_title})</option>`).join('');
+        select.innerHTML = items.map(it => `<option value="${it.item_type_id}">${it.name} (${it.game_title})</option>`).join('');
+        if (invGrid) {
+            invGrid.innerHTML = items.map(it => `
+              <div class="my-listing">
+                <div class="ml-emoji">${it.image_url || '📦'}</div>
+                <div class="ml-info">
+                  <div class="ml-name">${it.name}</div>
+                  <div class="ml-game">${it.game_title} &bull; x${it.quantity}</div>
+                </div>
+                <div class="ml-price"></div><span class="ml-status" style="color:var(--text);border-color:var(--border)">Owned</span>
+              </div>
+            `).join('');
+        }
       }
     }
 
@@ -1067,6 +1088,7 @@
       const res = await apiFetch(`/market/buy/${id}`, { method: 'POST' });
       if (res) {
         showToast(`Purchased ${name} for $${parseFloat(price).toFixed(2)} ✨`, 's');
+        await Auth.refreshUser(); // Sync balance
         loadListings();
         if (Auth.isAuthenticated()) {
             loadMyListings();
@@ -1086,17 +1108,17 @@
     function closeSell() { document.getElementById('sell-modal').classList.remove('open') }
 
     async function listItem() { 
-      const item_id = document.getElementById('item-to-sell').value;
+      const item_type_id = document.getElementById('item-to-sell').value;
       const price = document.getElementById('sell-price').value;
       
-      if (!item_id || !price) {
+      if (!item_type_id || !price) {
         showToast('Please select an item and set a price', 'i');
         return;
       }
 
       const res = await apiFetch('/market/listings', {
         method: 'POST',
-        body: JSON.stringify({ item_id, price })
+        body: JSON.stringify({ item_type_id, quantity: 1, price })
       });
 
       if (res) {

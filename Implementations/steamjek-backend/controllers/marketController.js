@@ -27,7 +27,7 @@ const getMyItems = async (req, res) => {
   const owner_id = req.user.id;
   try {
     const result = await pool.query(
-      `SELECT ui.id, it.name, it.description, it.image_url,
+      `SELECT ui.id, it.id as item_type_id, it.name, it.description, it.image_url,
               it.rarity, ui.quantity, g.title as game_title
        FROM user_items ui
        JOIN item_types it ON ui.item_type_id = it.id
@@ -64,11 +64,11 @@ const getMyListings = async (req, res) => {
 // CREATE LISTING (sell an item)
 const createListing = async (req, res) => {
   const seller_id = req.user.id;
-  const { item_type_id, quantity, price } = req.body;
+  const { item_type_id, quantity = 1, price } = req.body;
 
-  if (!item_type_id || !quantity || !price) {
+  if (!item_type_id || !price) {
     return res.status(400).json({ 
-      message: 'item_type_id, quantity and price are required' 
+      message: 'item_type_id and price are required' 
     });
   }
 
@@ -108,12 +108,18 @@ const buyItem = async (req, res) => {
   const buyer_id = req.user.id;
   const { listingId } = req.params;
 
+  const client = await pool.connect();
+
   try {
-    const listing = await pool.query(
-      'SELECT * FROM market_listings WHERE id = $1 AND is_sold = false',
+    await client.query('BEGIN');
+
+    const listing = await client.query(
+      'SELECT * FROM market_listings WHERE id = $1 AND is_sold = false FOR UPDATE',
       [listingId]
     );
+
     if (listing.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ 
         message: 'Listing not found or already sold' 
       });
@@ -122,12 +128,30 @@ const buyItem = async (req, res) => {
     const { item_type_id, seller_id, quantity, price } = listing.rows[0];
 
     if (seller_id === buyer_id) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ 
         message: 'You cannot buy your own item' 
       });
     }
 
-    await pool.query(
+    // Check buyer balance
+    const buyerResult = await client.query('SELECT balance FROM users WHERE id = $1', [buyer_id]);
+    const buyerBalance = parseFloat(buyerResult.rows[0].balance);
+    const itemPrice = parseFloat(price);
+
+    if (buyerBalance < itemPrice) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'Insufficient balance' });
+    }
+
+    // Deduct from buyer
+    await client.query('UPDATE users SET balance = balance - $1 WHERE id = $2', [itemPrice, buyer_id]);
+
+    // Add to seller
+    await client.query('UPDATE users SET balance = balance + $1 WHERE id = $2', [itemPrice, seller_id]);
+
+    // Transfer item to buyer
+    await client.query(
       `INSERT INTO user_items (owner_id, item_type_id, quantity)
        VALUES ($1, $2, $3)
        ON CONFLICT (owner_id, item_type_id) 
@@ -135,27 +159,34 @@ const buyItem = async (req, res) => {
       [buyer_id, item_type_id, quantity]
     );
 
-    await pool.query(
+    // Mark listing as sold
+    await client.query(
       'UPDATE market_listings SET is_sold = true WHERE id = $1',
       [listingId]
     );
 
-    await pool.query(
+    // Log transaction
+    await client.query(
       `INSERT INTO market_transactions 
         (listing_id, buyer_id, seller_id, item_type_id, quantity, price)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [listingId, buyer_id, seller_id, item_type_id, quantity, price]
+      [listingId, buyer_id, seller_id, item_type_id, quantity, itemPrice]
     );
+
+    await client.query('COMMIT');
 
     res.json({
       message: 'Item purchased successfully',
       item_type_id,
       quantity,
-      price
+      price: itemPrice
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error(err);
     res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
   }
 };
 

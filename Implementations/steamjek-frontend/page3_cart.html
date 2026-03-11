@@ -1006,6 +1006,8 @@
         }
     }
     
+    let isFreeState = false;
+
     async function checkout() { 
         if (!Auth.isAuthenticated()) {
             showToast('Please login to checkout', 'i');
@@ -1013,8 +1015,8 @@
             return;
         }
     
-        if (!cartGames.length || !stripe || !elements) { 
-            showToast('Cart is empty or payment not initialized!', 'i'); 
+        if (!cartGames.length) { 
+            showToast('Cart is empty!', 'i'); 
             return; 
         } 
         
@@ -1026,23 +1028,10 @@
         msg.textContent = '';
         
         try {
-            // Confirm the payment with Stripe
-            const { error, paymentIntent } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {},
-                redirect: 'if_required' // We don't want to redirect, we handle success locally
-            });
-
-            if (error) {
-                msg.textContent = error.message;
-                msg.style.display = 'block';
-                btn.disabled = false;
-                btn.innerHTML = '🔒 Purchase Now';
-            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-                // Now confirm the purchase on our backend
+            if (isFreeState) {
                 const res = await apiFetch('/purchases/confirm', { 
                     method: 'POST',
-                    body: JSON.stringify({ payment_intent_id: paymentIntent.id })
+                    body: JSON.stringify({ payment_intent_id: 'free_purchase' })
                 });
                 
                 if (res) {
@@ -1050,18 +1039,44 @@
                     document.getElementById('payment-element').innerHTML = ''; 
                     renderCart(); 
                     document.getElementById('modal').classList.add('open'); 
-                    updateBadges(); // Sync sidebar badges globally
+                    updateBadges();
+                    await Auth.refreshUser(); // Sync balance
                 }
             } else {
-                msg.textContent = 'Something went wrong while processing the payment.';
-                msg.style.display = 'block';
-                btn.disabled = false;
-                btn.innerHTML = '🔒 Purchase Now';
+                if (!stripe || !elements) {
+                    showToast('Payment not initialized!', 'i');
+                    return;
+                }
+                const { error, paymentIntent } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {},
+                    redirect: 'if_required' 
+                });
+
+                if (error) {
+                    msg.textContent = error.message;
+                    msg.style.display = 'block';
+                } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+                    const res = await apiFetch('/purchases/confirm', { 
+                        method: 'POST',
+                        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
+                    });
+                    
+                    if (res) {
+                        cartGames = []; 
+                        document.getElementById('payment-element').innerHTML = ''; 
+                        renderCart(); 
+                        document.getElementById('modal').classList.add('open'); 
+                        updateBadges();
+                        await Auth.refreshUser(); // Sync balance
+                    }
+                }
             }
         } catch (err) {
             console.error("Checkout failed:", err);
-            msg.textContent = 'An unexpected error occurred.';
+            msg.textContent = 'An unexpected error occurred during purchase.';
             msg.style.display = 'block';
+        } finally {
             btn.disabled = false;
             btn.innerHTML = '🔒 Purchase Now';
         }
@@ -1070,7 +1085,13 @@
     async function initializeStripe() {
         try {
             const res = await apiFetch('/purchases/create-payment-intent', { method: 'POST' });
-            if (res && res.clientSecret) {
+            const el = document.getElementById('payment-element');
+            if (res && res.isFree) {
+                isFreeState = true;
+                if (el) el.innerHTML = '<div style="color:var(--green); text-align:center; font-weight:600;">This order is FREE! No payment method required.</div>';
+                document.getElementById('submit-button').disabled = false;
+            } else if (res && res.clientSecret) {
+                isFreeState = false;
                 stripe = Stripe('pk_test_51T9lQ02Wal1pR9UuAqIvLDGstnDLSRdHoFKXNPXEYcirPIj5ca9IcXFpUT1hmrjdgQgOqyusWSTGTaUGeRN79zXo00lvAL7zxt');
                 
                 const appearance = {
@@ -1088,11 +1109,14 @@
                 elements = stripe.elements({ clientSecret: res.clientSecret, appearance });
                 const paymentElement = elements.create('payment');
                 
-                // Clear the loading message
-                document.getElementById('payment-element').innerHTML = '';
+                if (el) el.innerHTML = '';
                 paymentElement.mount('#payment-element');
                 
                 document.getElementById('submit-button').disabled = false;
+            } else {
+                // If res is null or doesn't have required fields
+                if (el) el.innerHTML = '<div style="color:var(--red); text-align:center;">Failed to initialize payment intent.</div>';
+                document.getElementById('submit-button').disabled = true;
             }
         } catch (err) {
             console.error("Failed to initialize Stripe:", err);

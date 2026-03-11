@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Electron build output
+Implementations/steamjek-frontend/dist/
+
+# Logs
+*.log
+test_results.txt
+tests_output.log
+tests_output_utf8.log
+
+# Environment secrets
+.env
+
+# OS files
+.DS_Store
+Thumbs.db

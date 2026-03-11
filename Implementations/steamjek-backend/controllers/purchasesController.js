@@ -25,7 +25,6 @@ const getPurchases = async (req, res) => {
 const createPaymentIntent = async (req, res) => {
   const user_id = req.user.id;
   try {
-    // Get all items in cart
     const cartItems = await pool.query(
       `SELECT cart.game_id, games.price, games.title
        FROM cart
@@ -38,13 +37,20 @@ const createPaymentIntent = async (req, res) => {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
-    // Calculate total in cents (Stripe uses cents)
     const total = cartItems.rows.reduce(
       (sum, item) => sum + parseFloat(item.price), 0
     );
     const totalCents = Math.round(total * 100);
 
-    // Create Stripe Payment Intent
+    if (totalCents === 0) {
+      // Free purchase
+      return res.json({
+        isFree: true,
+        amount: "0.00",
+        items: cartItems.rows
+      });
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'usd',
@@ -70,30 +76,12 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
-// CONFIRM PURCHASE (Step 2 - after payment success)
 const confirmPurchase = async (req, res) => {
   const user_id = req.user.id;
   const { payment_intent_id } = req.body;
 
   try {
-    // Verify payment with Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(
-      payment_intent_id
-    );
-
-    // Check payment was successful
-    if (paymentIntent.status !== 'succeeded') {
-      return res.status(400).json({
-        message: `Payment not completed. Status: ${paymentIntent.status}`
-      });
-    }
-
-    // Check payment belongs to this user
-    if (paymentIntent.metadata.user_id !== user_id.toString()) {
-      return res.status(403).json({ message: 'Unauthorized payment' });
-    }
-
-    // Get cart items
+    let total = 0;
     const cartItems = await pool.query(
       `SELECT cart.game_id, games.price
        FROM cart
@@ -106,6 +94,24 @@ const confirmPurchase = async (req, res) => {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
+    total = cartItems.rows.reduce(
+      (sum, item) => sum + parseFloat(item.price), 0
+    );
+
+    if (payment_intent_id === 'free_purchase') {
+      if (Math.round(total * 100) !== 0) {
+        return res.status(400).json({ message: 'Payment intent mismatch' });
+      }
+    } else {
+      const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ message: `Payment status: ${paymentIntent.status}` });
+      }
+      if (paymentIntent.metadata.user_id !== user_id.toString()) {
+        return res.status(403).json({ message: 'Unauthorized payment' });
+      }
+    }
+
     // Insert purchases
     for (const item of cartItems.rows) {
       await pool.query(
@@ -116,11 +122,6 @@ const confirmPurchase = async (req, res) => {
 
     // Clear cart
     await pool.query('DELETE FROM cart WHERE user_id = $1', [user_id]);
-
-    // Calculate total
-    const total = cartItems.rows.reduce(
-      (sum, item) => sum + parseFloat(item.price), 0
-    );
 
     res.status(201).json({
       message: 'Purchase successful',

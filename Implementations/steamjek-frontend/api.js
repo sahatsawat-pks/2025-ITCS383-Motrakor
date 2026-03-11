@@ -43,6 +43,8 @@ const Auth = {
     if (data) {
       localStorage.setItem('steamjek_token', data.token);
       localStorage.setItem('steamjek_user', JSON.stringify(data.user));
+      // Trigger sidebar update
+      updateSidebarUser();
     }
     return data;
   },
@@ -66,6 +68,16 @@ const Auth = {
     return userStr ? JSON.parse(userStr) : null;
   },
 
+  refreshUser: async () => {
+    if (!Auth.isAuthenticated()) return null;
+    const user = await apiFetch('/auth/profile');
+    if (user) {
+      localStorage.setItem('steamjek_user', JSON.stringify(user));
+      updateSidebarUser();
+    }
+    return user;
+  },
+
   isAuthenticated: () => !!localStorage.getItem('steamjek_token')
 };
 
@@ -77,12 +89,13 @@ function updateSidebarUser() {
 
   if (user) {
     const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    // Fetch latest balance from backend if possible, or use local
     pill.innerHTML = `
       <div class="user-pill" style="cursor:pointer" onclick="Auth.logout()">
         <div class="u-av">${initials}</div>
         <div>
           <div class="u-name">${user.name}</div>
-          <div class="u-bal">Click to logout</div>
+          <div class="u-bal">$${parseFloat(user.balance || 0).toFixed(2)}</div>
         </div>
       </div>`;
   } else {
@@ -149,6 +162,45 @@ async function updateBadges() {
     console.error("Error updating badges:", err);
   }
 }
+
+// Marketplace API Functions
+const Marketplace = {
+  getListings: () => apiFetch('/market/listings'),
+  getMyItems: () => apiFetch('/market/my-items'),
+  getMyListings: () => apiFetch('/market/my-listings'),
+  createListing: (item_type_id, quantity, price) => apiFetch('/market/listings', {
+    method: 'POST',
+    body: JSON.stringify({ item_type_id, quantity, price })
+  }),
+  buyItem: (listingId) => apiFetch(`/market/buy/${listingId}`, {
+    method: 'POST'
+  })
+};
+
+// Library & Download API Functions
+const Library = {
+  getPurchases: () => apiFetch('/purchases'),
+  downloadGame: async (gameId) => {
+    const token = localStorage.getItem('steamjek_token');
+    const resp = await fetch(`${API_BASE_URL}/games/${gameId}/download`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!resp.ok) {
+      showToast('Download failed', 'e');
+      return false;
+    }
+    const blob = await resp.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `game_${gameId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    return true;
+  }
+};
 
 // Auto update sidebar and badges on every page that includes this script
 document.addEventListener('DOMContentLoaded', () => {

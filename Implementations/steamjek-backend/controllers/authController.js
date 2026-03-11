@@ -66,7 +66,7 @@ const login = async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, balance: user.balance }
     });
 
   } catch (err) {
@@ -75,4 +75,21 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const getProfile = async (req, res) => {
+  const user_id = req.user.id;
+  try {
+    const result = await pool.query(
+      'SELECT id, name, email, role, balance, address FROM users WHERE id = $1',
+      [user_id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, getProfile };

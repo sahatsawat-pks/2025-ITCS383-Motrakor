@@ -76,4 +76,22 @@ const createGame = async (req, res) => {
   }
 };
 
-module.exports = { getAllGames, getGameById, searchGames, createGame };
+// DOWNLOAD GAME
+const downloadGame = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('SELECT title FROM games WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Game not found' });
+    }
+    const game = result.rows[0];
+    res.setHeader('Content-Disposition', `attachment; filename="${game.title.replace(/\s+/g, '_')}.txt"`);
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(game.title);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getAllGames, getGameById, searchGames, createGame, downloadGame };

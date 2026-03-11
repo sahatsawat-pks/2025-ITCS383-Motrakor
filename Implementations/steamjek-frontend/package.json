@@ -1,0 +1,24 @@
+{
+  "name": "steamjek-native",
+  "version": "1.0.0",
+  "description": "SteamJek Native Desktop Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "SteamJek",
+  "license": "ISC",
+  "build": {
+    "appId": "com.steamjek.app",
+    "productName": "SteamJek",
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "electron": "^41.0.0",
+    "electron-builder": "^26.8.1"
+  }
+}

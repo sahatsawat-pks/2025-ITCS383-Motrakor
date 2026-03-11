@@ -807,19 +807,6 @@
               <div class="screenshot">💫</div>
             </div>
 
-            <!-- RATE SECTION -->
-            <div class="section-title" style="margin-top:10px">Rate This Game</div>
-            <div
-              style="display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px">
-              <div id="rate-stars" style="display:flex;gap:6px;font-size:28px;cursor:pointer">
-                <span onclick="rate(1)" class="rstar">☆</span>
-                <span onclick="rate(2)" class="rstar">☆</span>
-                <span onclick="rate(3)" class="rstar">☆</span>
-                <span onclick="rate(4)" class="rstar">☆</span>
-                <span onclick="rate(5)" class="rstar">☆</span>
-              </div>
-              <span id="rate-label" style="font-size:13px;color:var(--muted)">Click to rate</span>
-            </div>
           </div>
 
           <!-- RIGHT - BUY CARD -->
@@ -1250,19 +1237,6 @@
       }
     }
     
-    const labels = ['', 'Terrible', 'Poor', 'Average', 'Good', 'Excellent'];
-    function rate(n) { 
-      if (!Auth.isAuthenticated()) {
-        showToast('Please login to rate games', 'i');
-        showAuthModal();
-        return;
-      }
-      rated = n; 
-      const stars = document.querySelectorAll('.rstar'); 
-      stars.forEach((s, i) => { s.textContent = i < n ? '★' : '☆'; s.style.color = i < n ? 'var(--gold)' : 'var(--muted)' }); 
-      document.getElementById('rate-label').textContent = labels[n] + ' (' + n + '/5)'; 
-      showToast(`Rated ${n}/5 ⭐`, 's');
-    }
 
     document.addEventListener('DOMContentLoaded', initPage);
 

@@ -787,7 +787,7 @@
             <div class="ps-label">Playtime</div>
           </div>
           <div class="ps-card">
-            <div class="ps-val" style="color:var(--green)">$124.50</div>
+            <div class="ps-val" style="color:var(--green)" id="pf-bal1">$0.00</div>
             <div class="ps-label">Wallet Balance</div>
           </div>
           <div class="ps-card">
@@ -953,7 +953,7 @@
             <div class="sec-card">
               <div class="sec-title">💰 Wallet</div>
               <div style="text-align:center;padding:8px 0 16px">
-                <div style="font-family:var(--fw);font-size:40px;font-weight:700;color:var(--gold)">$124.50</div>
+                <div style="font-family:var(--fw);font-size:40px;font-weight:700;color:var(--gold)" id="pf-bal2">$0.00</div>
                 <div style="font-size:12px;color:var(--muted);margin-top:4px">Available balance</div>
               </div>
               <button class="btn btn-primary" style="width:100%;justify-content:center"
@@ -970,7 +970,10 @@
     function switchTab(id) { document.querySelectorAll('.tab').forEach((t, i) => { const ids = ['activity', 'reviews', 'settings']; t.classList.toggle('on', ids[i] === id) }); document.querySelectorAll('.tab-panel').forEach(p => { p.classList.toggle('on', p.id === 'panel-' + id) }) }
     function toast(msg, t) { showToast(msg, t); }
 
-    function initProfile() {
+    async function initProfile() {
+      if (Auth.isAuthenticated()) {
+        await Auth.refreshUser();
+      }
       const user = Auth.getUser();
       if (!user) {
         window.location.href = 'page1_store.html';
@@ -980,8 +983,14 @@
       document.getElementById('pf-av').textContent = initials;
       document.getElementById('pf-name').textContent = user.name;
       document.getElementById('pf-email').textContent = `${user.email} · Member since 2025`;
+      
+      const balanceStr = `$${(user.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+      if (document.getElementById('pf-bal1')) document.getElementById('pf-bal1').textContent = balanceStr;
+      if (document.getElementById('pf-bal2')) document.getElementById('pf-bal2').textContent = balanceStr;
+
       if (document.getElementById('settings-name')) document.getElementById('settings-name').value = user.name;
       if (document.getElementById('settings-email')) document.getElementById('settings-email').value = user.email;
+      updateSidebarUser();
     }
 
     document.addEventListener('DOMContentLoaded', initProfile);
