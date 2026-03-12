@@ -91,7 +91,7 @@ function updateSidebarUser() {
     const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     // Fetch latest balance from backend if possible, or use local
     pill.innerHTML = `
-      <div class="user-pill" style="cursor:pointer" onclick="Auth.logout()">
+      <div class="user-pill" style="cursor:pointer" onclick="location.href='page7_profile.html'">
         <div class="u-av">${initials}</div>
         <div>
           <div class="u-name">${user.name}</div>
@@ -100,7 +100,7 @@ function updateSidebarUser() {
       </div>`;
   } else {
     pill.innerHTML = `
-      <a href="page1_store.html" class="user-pill">
+      <a href="page1_store.html" class="user-pill" style="cursor:pointer">
         <div class="u-av">?</div>
         <div>
           <div class="u-name">Not Logged In</div>
@@ -180,25 +180,90 @@ const Marketplace = {
 // Library & Download API Functions
 const Library = {
   getPurchases: () => apiFetch('/purchases'),
-  downloadGame: async (gameId) => {
-    const token = localStorage.getItem('steamjek_token');
-    const resp = await fetch(`${API_BASE_URL}/games/${gameId}/download`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!resp.ok) {
-      showToast('Download failed', 'e');
+  
+  isInstalled: async (gameId) => {
+    try {
+      if (typeof window.require === 'function') {
+        const { ipcRenderer } = window.require('electron');
+        return await ipcRenderer.invoke('game:check-installed', gameId);
+      }
+    } catch (e) { console.error(e); }
+    return localStorage.getItem(`installed_${gameId}`) === 'true';
+  },
+
+  downloadGame: async (gameId, title) => {
+    try {
+      const token = localStorage.getItem('steamjek_token');
+      const resp = await fetch(`${API_BASE_URL}/games/${gameId}/download`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/plain'
+        }
+      });
+      
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({ message: 'Download failed' }));
+        showToast(errData.message || 'Download failed', 'e');
+        return false;
+      }
+
+      const content = await resp.text();
+
+      // Use Electron IPC for real saving if available
+      if (typeof window.require === 'function') {
+        const { ipcRenderer } = window.require('electron');
+        const res = await ipcRenderer.invoke('game:download', { gameId, title, content });
+        return res.success;
+      }
+
+      // Fallback for browser/legacy
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      return true;
+    } catch (err) {
+      console.error('Download logic error:', err);
+      showToast('Download error', 'e');
       return false;
     }
-    const blob = await resp.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `game_${gameId}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-    return true;
+  },
+
+  deleteGame: async (gameId) => {
+    try {
+      if (typeof window.require === 'function') {
+        const { ipcRenderer } = window.require('electron');
+        const res = await ipcRenderer.invoke('game:delete', gameId);
+        return res.success;
+      }
+    } catch (e) {
+      console.error('Real file deletion failed:', e);
+    }
+    return true; // Fallback
+  },
+
+  getGamesFolder: async () => {
+    try {
+      if (typeof window.require === 'function') {
+        const { ipcRenderer } = window.require('electron');
+        return await ipcRenderer.invoke('game:get-path');
+      }
+    } catch (e) { console.error(e); }
+    return 'Managed Folder';
+  },
+
+  openGamesFolder: async () => {
+    try {
+      if (typeof window.require === 'function') {
+        const { ipcRenderer } = window.require('electron');
+        await ipcRenderer.invoke('game:open-folder');
+      }
+    } catch (e) { console.error(e); }
   }
 };
 

@@ -6,6 +6,10 @@ const jwt = require('jsonwebtoken');
 const register = async (req, res) => {
   const { name, email, password, address } = req.body;
 
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: 'Name, email, and password are required' });
+  }
+
   try {
     // Check if email already exists
     const existingUser = await pool.query(
@@ -38,6 +42,10 @@ const register = async (req, res) => {
 // LOGIN
 const login = async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
 
   try {
     // Check if user exists

@@ -689,7 +689,7 @@
       <div class="nav-section">Discover</div>
       <a class="nav-link" href="page1_store.html"><span class="nav-icon">🏪</span>Store</a>
       <a class="nav-link" href="page5_wishlist.html"><span class="nav-icon">❤️</span>Wishlist<span
-          class="nav-badge">3</span></a>
+          class="nav-badge">0</span></a>
       <div class="nav-section">Library</div>
       <a class="nav-link active" href="page6_library.html"><span class="nav-icon">🎮</span>My Games</a>
       <div class="nav-section">Market</div>
@@ -697,7 +697,7 @@
       <div class="nav-section">Account</div>
       <a class="nav-link" href="page7_profile.html"><span class="nav-icon">👤</span>Profile</a>
       <a class="nav-link" href="page3_cart.html"><span class="nav-icon">🛒</span>Cart<span
-          class="nav-badge">2</span></a>
+          class="nav-badge">0</span></a>
       <div class="sidebar-foot" id="user-context"></div>
     </nav>
     <div class="main">
@@ -726,6 +726,18 @@
             <div class="ls-val" style="color:#a78bfa">18</div>
             <div class="ls-label">Cloud Only</div>
           </div>
+        </div>
+
+        <!-- INSTALL FOLDER INFO -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div style="font-size:24px">📂</div>
+                <div>
+                    <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Managed Install Location</div>
+                    <div id="install-path" style="font-family:monospace;font-size:13px;color:var(--muted);margin-top:2px">Fetching...</div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" style="background:rgba(255,255,255,0.1)" onclick="Library.openGamesFolder()">Open Folder</button>
         </div>
 
         <!-- CONTROLS -->
@@ -757,9 +769,9 @@
     let viewMode = 'grid';
     let cur = 'all';
 
-    function gridCard(g) { return `<div class="lg-card"><div class="lg-thumb" onclick="location.href='page2_game_detail.html?id=${g.game_id}'" style="cursor:pointer"><span style="position:relative;z-index:1">${g.emoji}</span><div class="lg-overlay"></div></div><div class="lg-body"><div class="lg-genre">${g.genre}</div><div class="lg-title"><a href="page2_game_detail.html?id=${g.game_id}" style="color:inherit;text-decoration:none;">${g.title}</a></div><div class="lg-footer"><span class="lg-hours">${g.hours}h played</span><span class="cloud-badge"><div class="cloud-dot ${g.local ? 'local' : 'cloud'}"></div>${g.local ? 'Local' : 'Cloud'}</span></div><div class="lg-actions"><button class="btn btn-primary" onclick="play('${g.title}')">▶ Play</button><button class="btn btn-ghost" onclick="toggleLocal(${g.game_id})" title="${g.local ? 'Delete local files' : 'Download'}">${g.local ? '🗑 Delete' : '⬇ Install'}</button></div></div></div>` }
+    function gridCard(g) { return `<div class="lg-card"><div class="lg-thumb" onclick="location.href='page2_game_detail.html?id=${g.game_id}'" style="cursor:pointer"><span style="position:relative;z-index:1">${g.emoji}</span><div class="lg-overlay"></div></div><div class="lg-body"><div class="lg-genre">${g.genre}</div><div class="lg-title"><a href="page2_game_detail.html?id=${g.game_id}" style="color:inherit;text-decoration:none;">${g.title}</a></div><div class="lg-footer"><span class="lg-hours">${g.hours}h played</span><span class="cloud-badge"><div class="cloud-dot ${g.local ? 'local' : 'cloud'}"></div>${g.local ? 'Local' : 'Cloud'}</span></div><div class="lg-actions"><button class="btn btn-primary" onclick="play('${g.title}')">▶ Play</button><button class="btn btn-ghost" onclick="toggleLocal(${g.game_id})" title="${g.local ? 'Delete local files' : 'Download'}">${g.local ? '🗑 Delete' : '⬇ Install'}</button><button class="btn" style="background:rgba(239, 68, 68, 0.1);color:#ef4444;border:1px solid rgba(239, 68, 68, 0.2);padding:0 8px" onclick="removeGame(${g.game_id}, '${g.title}')" title="Remove from Library">✖</button></div></div></div>` }
 
-    function listRow(g) { return `<div class="ll-row"><div class="ll-thumb">${g.emoji}</div><div class="ll-info"><div class="ll-title"><a href="page2_game_detail.html?id=${g.game_id}" style="color:inherit;text-decoration:none;">${g.title}</a></div><div class="ll-dev">by ${g.dev}</div><div class="ll-meta"><span class="ll-tag">${g.genre}</span><span class="ll-hours">${g.hours}h played</span><span style="font-size:11px;color:var(--muted)">Last: ${g.lastPlayed}</span></div></div><div class="ll-right"><span class="cloud-badge"><div class="cloud-dot ${g.local ? 'local' : 'cloud'}"></div><span style="font-size:11px;color:var(--muted2)">${g.local ? 'Downloaded' : 'Cloud'}</span></span><div class="ll-actions"><button class="btn btn-primary btn-sm" onclick="play('${g.title}')">▶ Play</button><button class="btn btn-ghost btn-sm" onclick="toggleLocal(${g.game_id})">${g.local ? '🗑' : '⬇'}</button></div></div></div>` }
+    function listRow(g) { return `<div class="ll-row"><div class="ll-thumb">${g.emoji}</div><div class="ll-info"><div class="ll-title"><a href="page2_game_detail.html?id=${g.game_id}" style="color:inherit;text-decoration:none;">${g.title}</a></div><div class="ll-dev">by ${g.dev}</div><div class="ll-meta"><span class="ll-tag">${g.genre}</span><span class="ll-hours">${g.hours}h played</span><span style="font-size:11px;color:var(--muted)">Last: ${g.lastPlayed}</span></div></div><div class="ll-right"><span class="cloud-badge"><div class="cloud-dot ${g.local ? 'local' : 'cloud'}"></div><span style="font-size:11px;color:var(--muted2)">${g.local ? 'Downloaded' : 'Cloud'}</span></span><div class="ll-actions"><button class="btn btn-primary btn-sm" onclick="play('${g.title}')">▶ Play</button><button class="btn btn-ghost btn-sm" onclick="toggleLocal(${g.game_id})">${g.local ? '🗑' : '⬇'}</button><button class="btn btn-sm" style="background:rgba(239, 68, 68, 0.1);color:#ef4444;border:1px solid rgba(239, 68, 68, 0.2)" onclick="removeGame(${g.game_id}, '${g.title}')">✖ Remove</button></div></div></div>` }
 
     function updateStats() {
       const owned = GAMES.length;
@@ -810,7 +822,7 @@
       if (!g.local) {
         // Installing
         showToast(`Downloading ${g.title}… 💾`, 'i');
-        Library.downloadGame(g.game_id).then(success => {
+        Library.downloadGame(g.game_id, g.title).then(success => {
           if (success) {
             g.local = true;
             localStorage.setItem(`installed_${g.game_id}`, 'true');
@@ -821,12 +833,31 @@
         });
       } else {
         // Deleting
-        g.local = false;
-        localStorage.removeItem(`installed_${g.game_id}`);
-        showToast(`${g.title} files deleted — cloud save preserved ☁️`, 'i'); 
-        updateStats();
-        render(getFiltered());
+        Library.deleteGame(g.game_id).then(success => {
+            if (success) {
+                g.local = false;
+                localStorage.removeItem(`installed_${g.game_id}`);
+                showToast(`${g.title} files deleted from disk ✅`, 'i'); 
+                updateStats();
+                render(getFiltered());
+            }
+        });
       }
+    }
+
+    function removeGame(gameId, title) {
+      if (!confirm(`Are you sure you want to permanently remove ${title} from your library?`)) return;
+      
+      apiFetch(`/purchases/${gameId}`, { method: 'DELETE' })
+        .then(res => {
+          if (res) {
+            GAMES = GAMES.filter(g => g.game_id !== gameId);
+            localStorage.removeItem(`installed_${gameId}`);
+            showToast(`${title} removed from library 🗑️`, 's');
+            updateStats();
+            render(getFiltered());
+          }
+        });
     }
 
     async function initPage() {
@@ -836,6 +867,10 @@
         return;
       }
       try {
+        const folder = await Library.getGamesFolder();
+        const pEl = document.getElementById('install-path');
+        if (pEl) pEl.innerText = folder;
+
         const data = await apiFetch('/purchases');
         if (!data) return;
         
@@ -843,13 +878,24 @@
           id: p.id,
           game_id: p.game_id,
           title: p.title,
-          emoji: '🎮', // In real app, games table would have emoji
+          emoji: '🎮', 
           genre: p.genre || 'Action',
           dev: 'Developer',
           hours: Math.floor(Math.random() * 50),
-          local: localStorage.getItem(`installed_${p.game_id}`) === 'true',
+          local: false, // Will be updated below
           lastPlayed: 'Recently'
         }));
+
+        // Check if actually installed on disk
+        for (let g of GAMES) {
+          g.local = await Library.isInstalled(g.game_id);
+          if (g.local) {
+            localStorage.setItem(`installed_${g.game_id}`, 'true');
+          } else {
+            localStorage.removeItem(`installed_${g.game_id}`);
+          }
+        }
+
         updateStats();
         render(GAMES);
       } catch (err) {

@@ -19,15 +19,19 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: |
           cd Implementations/steamjek-backend
           npm ci
 
-      - name: Run tests
+      - name: Run smoke tests (no DB required)
         run: |
           cd Implementations/steamjek-backend
-          npm test || echo "No tests"
+          npx jest tests/smoke.test.js --forceExit --testTimeout=10000
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci-test-secret
+          STRIPE_SECRET_KEY: sk_test_dummy
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2

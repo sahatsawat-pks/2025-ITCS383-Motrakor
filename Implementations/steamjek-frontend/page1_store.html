@@ -738,7 +738,12 @@
       font-family: var(--fw);
       font-size: 18px;
       font-weight: 700;
-      color: var(--gold)
+      color: var(--gold);
+      transition: opacity 0.2s ease
+    }
+
+    .gc:has(.gc-add:not(.added):hover) .gc-price {
+      opacity: 0
     }
 
     .gc-price.free {
@@ -880,7 +885,7 @@
       <div class="nav-section">Discover</div>
       <a class="nav-link active" href="page1_store.html"><span class="nav-icon">🏪</span>Store</a>
       <a class="nav-link" href="page5_wishlist.html"><span class="nav-icon">❤️</span>Wishlist<span
-          class="nav-badge">3</span></a>
+          class="nav-badge">0</span></a>
       <div class="nav-section">Library</div>
       <a class="nav-link" href="page6_library.html"><span class="nav-icon">🎮</span>My Games</a>
       <div class="nav-section">Market</div>
@@ -888,7 +893,7 @@
       <div class="nav-section">Account</div>
       <a class="nav-link" href="page7_profile.html"><span class="nav-icon">👤</span>Profile</a>
       <a class="nav-link" href="page3_cart.html"><span class="nav-icon">🛒</span>Cart<span
-          class="nav-badge">2</span></a>
+          class="nav-badge">0</span></a>
       <div class="sidebar-foot" id="user-context"></div>
     </nav>
 
@@ -910,7 +915,7 @@
 
       <div class="content">
         <!-- HERO -->
-        <div class="hero" onclick="location.href='page2_game_detail.html'">
+        <div class="hero" onclick="location.href='page2_game_detail.html?id=1'">
           <div class="hero-bg"></div>
           <div class="hero-fx"></div>
           <div class="hero-grid-lines"></div>
@@ -921,8 +926,8 @@
             <div class="hero-desc">Command your fleet across a procedurally generated galaxy. 100+ hours of epic
               campaign, brutal PvP warfare, and deep economic conquest.</div>
             <div class="hero-btns">
-              <a href="page2_game_detail.html" class="btn btn-primary" onclick="event.stopPropagation()">View Game →</a>
-              <button class="btn btn-ghost" onclick="event.stopPropagation();addToCart(0)">+ Add to Cart</button>
+              <a href="page2_game_detail.html?id=1" class="btn btn-primary" onclick="event.stopPropagation()">View Game →</a>
+              <button class="btn btn-ghost" onclick="event.stopPropagation();addToCart(1)">+ Add to Cart</button>
             </div>
           </div>
           <div class="hero-corner">
@@ -1165,8 +1170,11 @@
         const badgeTag = g.badge || null;
         
         let actionBtn = `<button class="gc-add${ic ? ' added' : ''}" onclick="event.stopPropagation();addToCart(${g.id})" title="${ic ? 'In cart' : 'Add to Cart'}">${ic ? '✓' : '+'}</button>`;
+        let priceDiv = `<div class="gc-price${Number(g.price) === 0 ? ' free' : ''}">${priceFmt}</div>`;
+        
         if (ip) {
-            actionBtn = `<button class="gc-add added" style="background:var(--panel2);color:var(--muted);cursor:default" onclick="event.stopPropagation();" title="Already in your library">Owned</button>`;
+            actionBtn = `<button class="gc-add added" style="background:var(--panel2);color:var(--muted);cursor:default;width:auto;padding:0 12px;right:10px" onclick="event.stopPropagation();" title="Already in your library">Owned</button>`;
+            priceDiv = '';
         }
         
         return `<div class="gc" onclick="location.href='page2_game_detail.html?id=${g.id}'">
@@ -1177,7 +1185,7 @@
                 <div class="gc-dev">${devName}</div>
                 <div class="gc-foot">
                     <div class="stars">${renderStars(Math.round(rating))}<span class="rv">${rating}</span></div>
-                    <div class="gc-price${Number(g.price) === 0 ? ' free' : ''}">${priceFmt}</div>
+                    ${priceDiv}
                 </div>
             </div>
             ${actionBtn}

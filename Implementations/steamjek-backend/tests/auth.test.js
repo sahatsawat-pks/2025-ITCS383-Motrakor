@@ -39,7 +39,7 @@ describe('Auth API', () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({ email: 'incomplete@example.com' });
-      expect(res.statusCode).toBe(500);
+      expect(res.statusCode).toBe(400);
     });
   });
 

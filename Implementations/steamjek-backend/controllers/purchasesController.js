@@ -120,6 +120,14 @@ const confirmPurchase = async (req, res) => {
       );
     }
 
+    // Deduct total from user balance
+    if (total > 0) {
+      await pool.query(
+        'UPDATE users SET balance = balance - $1 WHERE id = $2',
+        [total, user_id]
+      );
+    }
+
     // Clear cart
     await pool.query('DELETE FROM cart WHERE user_id = $1', [user_id]);
 
@@ -136,4 +144,25 @@ const confirmPurchase = async (req, res) => {
   }
 };
 
-module.exports = { getPurchases, createPaymentIntent, confirmPurchase };
+const removePurchase = async (req, res) => {
+  const user_id = req.user.id;
+  const game_id = req.params.gameId;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM purchases WHERE user_id = $1 AND game_id = $2 RETURNING *',
+      [user_id, game_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Purchase not found in library' });
+    }
+
+    res.json({ message: 'Game removed from library' });
+  } catch (err) {
+    console.error('Error removing purchase:', err);
+    res.status(500).json({ message: 'Server error while removing game' });
+  }
+};
+
+module.exports = { getPurchases, createPaymentIntent, confirmPurchase, removePurchase };

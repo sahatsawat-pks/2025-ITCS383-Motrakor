@@ -28,6 +28,10 @@
   "jest": {
     "testEnvironment": "node",
     "testTimeout": 30000,
+    "globalSetup": "./tests/globalSetup.js",
+    "setupFilesAfterEnv": [
+      "./tests/setup.js"
+    ],
     "testMatch": [
       "**/tests/**/*.test.js"
     ]

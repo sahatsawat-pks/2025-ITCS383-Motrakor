@@ -7,7 +7,13 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  max: 20
+});
+
+// Prevent the app from crashing when an idle connection is disconnected by the DB server
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
 });
 
 pool.connect()
