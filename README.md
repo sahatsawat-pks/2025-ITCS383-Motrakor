@@ -18,8 +18,9 @@ SteamJek is a full-stack digital game distribution platform featuring:
 - **JWT Authentication** — Secure login and registration system
 
 ---
-## How to run
-Download An EXE FROM THIS link  https://drive.google.com/file/d/1na5gS0E7O7xBdd2OkDYnocyo1l7V_XYY/view?usp=sharing
+## How to run (Just from EXE)
+Download An EXE FROM THIS link  https://drive.google.com/file/d/1M3M4b4493s-jDjHtHWgLhGj-Ev3_VrhS/view?usp=sharing
+
 ## 🛠 Tech Stack
 
 | Layer | Technology | Version |
@@ -40,7 +41,7 @@ Download An EXE FROM THIS link  https://drive.google.com/file/d/1na5gS0E7O7xBdd2
 
 ## ✅ Prerequisites
 
-Before running this project, make sure you have the following installed:
+Before running the test for this project, make sure you have the following installed:
 
 - **Node.js** v18 or higher — https://nodejs.org
 - **PostgreSQL 16** — https://www.postgresql.org/download
@@ -51,7 +52,7 @@ Before running this project, make sure you have the following installed:
 
 ---
 
-## 🚀 Build & Run Instructions
+## 🚀 Build & test Instructions
 
 ### 1 — Clone the Repository
 
