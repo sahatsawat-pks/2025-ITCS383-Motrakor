@@ -12,6 +12,7 @@ tests_output_utf8.log
 
 # Environment secrets
 .env
+.scannerwork
 
 # OS files
 .DS_Store

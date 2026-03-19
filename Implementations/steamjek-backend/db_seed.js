@@ -59,9 +59,9 @@ async function seed() {
         ($1, 'Plasma Sword', 'A glowing blade of pure energy.', 'Legendary'),
         ($1, 'Heavy Shield', 'Provides massive defense.', 'Rare'),
         ($2, 'Golden Portal Gun', 'A fancy version of the classic tool.', 'Legendary'),
-        ($4, 'Prismatic Shard', 'A very rare and powerful mineral.', 'Legendary'),
-        ($7, 'Terra Blade', 'The ultimate sword for any explorer.', 'Legendary'),
-        ($8, 'Dragonclaw Hook', 'A rare cosmetic for Pudge.', 'Immortal')
+        ($3, 'Prismatic Shard', 'A very rare and powerful mineral.', 'Legendary'),
+        ($4, 'Terra Blade', 'The ultimate sword for any explorer.', 'Legendary'),
+        ($5, 'Dragonclaw Hook', 'A rare cosmetic for Pudge.', 'Immortal')
       RETURNING id, name
     `, [nebulaId, portalId, stardewId, terrariaId, dotaId]);
 
@@ -89,8 +89,8 @@ async function seed() {
         ($1, $2, 45.50, 1, false),
         ($1, $2, 48.00, 1, false),
         ($3, $2, 125.00, 1, false),
-        ($4, $3, 15.00, 1, false),
-        ($6, $3, 200.00, 1, false)
+        ($4, $6, 15.00, 1, false),
+        ($5, $6, 200.00, 1, false)
     `, [swordId, bobId, shardId, shieldId, hookId, charlieId]);
 
     console.log('✅ Seeding complete!');
