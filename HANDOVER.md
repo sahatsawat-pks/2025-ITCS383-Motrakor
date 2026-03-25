@@ -12,7 +12,59 @@ The project, "Steamjek," is a digital game distribution and marketplace platform
 - **Admin Management:** Special administrative tools for overseeing and approving users, games, and marketplace activity (`adminController`).
 
 ## 2. Design Verification
-*(Blank for now - C4 diagram updates and implementation consistency verification to be completed later)*
+The implementation closely follows the structural design outlined in the C4 documentation.
+
+## Context Diagram
+
+* **Consistencies:** The actors **User**, **Game Creator**, and **Admin** are consistently represented in the implementation. The system still functions as a platform for browsing, purchasing, and managing games.
+* **Update the C4 Diagram:**
+    * Update the database specification from only "Cloud Database" to specifically use **PostgreSQL**.
+    * The external payment system can be confirmed to be **Stripe API**.
+
+## Container Diagram
+
+* **Consistencies:**
+    * The split between **Frontend** and **Backend** remains accurate. But some part of code in Frontend still use hardcode.
+* **Update the C4 Diagram:**
+    * Update **Database** container to **PostgreSQL**.
+    * Include **JWT (JSON Web Token)** as the specific container.
+    * The external payment system can be confirmed to be **Stripe API**.
+
+## Component Diagram
+
+### SteamJek App Client 
+* **Consistencies:** The frontend uses a modular structure where specific pages (Store, Cart, Profile) interact with a centralized `api.js` for data fetching.
+* **Update the C4 Diagram:** Note the use of **Local Storage** for persistent token storage, which manages the "Authenticated" state.
+
+### API Gateway Service
+* **Consistencies:** The entry point for all client requests is handled by the **Express** server, which routes traffic to specific sub-services/controllers.
+* **Update the C4 Diagram:** Add **CORS Middleware** and **JSON Parsing Middleware** as explicit components at the gateway level to reflect implementation requirements.
+
+### Order & Cart Service
+* **Consistencies:** Implemented via `cartController.js` and `cart.js` routes, handling the logic for adding, removing, and viewing items in a user's temporary purchase list.
+* **Update the C4 Diagram:**
+    * Include the **Stripe Integration Component** within this service to handle the final checkout and payment verification.
+    * Update **Database** container to **PostgreSQL**.
+
+### Store Service
+* **Consistencies:** Managed by the `gamesController.js`, allowing users to retrieve lists of games and specific game details.
+* **Update the C4 Diagram:** Add a **Rating/Review Component** as the implementation includes specific logic for user feedback and average ratings.
+
+### User Service
+* **Consistencies:** The `authController.js` handles user profile data and account management.
+* **Update the C4 Diagram:** Explicitly show the **Bcrypt Hashing Component** used for protecting user passwords during storage and verification.
+
+### Marketplace Service
+* **Consistencies:** Dedicated logic in `marketController.js` handles item listings and community transactions.
+* **Update the C4 Diagram:** Add a **Transaction Ledger Component** to track marketplace history between buyers and sellers.
+
+### Search Service
+* **Consistencies:** Search functionality is integrated into the `gamesController.js` through **SQL queries** (using LIKE or full-text search parameters).
+* **Update the C4 Diagram:** Rather than a standalone service, represent this as a **Search Query Component** within the Store Service.
+
+### Authentication Service
+* **Consistencies:** Secure login and registration are handled via dedicated endpoints in `routes/auth.js`.
+* **Update the C4 Diagram:** Formally add the **JWT Generator/Validator** as the core component that issues and verifies access tokens for all other protected services.
 
 
 ## 3. Reflections on Project Handover
