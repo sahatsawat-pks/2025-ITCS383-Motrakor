@@ -21,7 +21,8 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
-    "stripe": "^20.4.1"
+    "stripe": "^20.4.1",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
@@ -37,7 +38,10 @@
     "globalSetup": "./tests/globalSetup.js",
     "collectCoverage": true,
     "coverageDirectory": "coverage",
-    "coverageReporters": ["lcov", "text-summary"],
+    "coverageReporters": [
+      "lcov",
+      "text-summary"
+    ],
     "collectCoverageFrom": [
       "controllers/**/*.js",
       "routes/**/*.js",

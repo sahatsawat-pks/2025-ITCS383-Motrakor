@@ -43,7 +43,7 @@ jobs:
         env:
           PGPASSWORD: password
         run: |
-          psql -h localhost -U user -d steamjek_test -f Implementations/steamjek-backend/db/setup.sql
+          psql -h localhost -U user -d steamjek_test -f Implementations/steamjek-backend/db/seed_data.sql
 
       - name: Run tests
         env:

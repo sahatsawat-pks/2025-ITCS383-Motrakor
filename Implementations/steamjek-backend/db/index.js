@@ -1,4 +1,7 @@
-const { Pool } = require('pg');
+const { Pool, neonConfig } = require('@neondatabase/serverless');
+const ws = require('ws');
+neonConfig.webSocketConstructor = ws;
+
 const path = require("node:path");
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
