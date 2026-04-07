@@ -160,9 +160,9 @@ CREATE TABLE IF NOT EXISTS thread_likes (
 
 -- Insert Users (Password for all is 'password123' using a standard bcrypt hash)
 INSERT INTO users (id, name, email, password, address, balance) VALUES 
-(1, 'Alice Smith', 'alice@example.com', '$2a$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa', '123 Test St', 1000.00),
-(2, 'Bob Jones', 'bob@example.com', '$2a$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa', '456 Market Ave', 500.00),
-(3, 'Charlie Gamer', 'charlie@example.com', '$2a$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa', '789 Play Rd', 250.00);
+(1, 'Alice Smith', 'alice@example.com', '$2b$10$ZF28vaiuDjg1jQ/cBkOTdunJ.JT4IwCOJbiczMpR/NznvxwbcK5fe', '123 Test St', 1000.00),
+(2, 'Bob Jones', 'bob@example.com', '$2b$10$ZF28vaiuDjg1jQ/cBkOTdunJ.JT4IwCOJbiczMpR/NznvxwbcK5fe', '456 Market Ave', 500.00),
+(3, 'Charlie Gamer', 'charlie@example.com', '$2b$10$ZF28vaiuDjg1jQ/cBkOTdunJ.JT4IwCOJbiczMpR/NznvxwbcK5fe', '789 Play Rd', 250.00);
 
 -- Insert Games
 INSERT INTO games (id, title, description, genre, price, cover_image, age_rating, is_approved) VALUES 

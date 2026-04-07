@@ -1,5 +1,5 @@
 // Determine base URL dynamically depending on whether we're on Vercel or localhost
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
 const API_BASE_URL = isLocalhost ? 'http://localhost:3000/api' : '/api';
 
 // Utility for making authenticated fetch requests
@@ -350,8 +350,10 @@ function injectAuthModal() {
 
   const style = document.createElement('style');
   style.innerHTML = `
-    .g-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; }
-    .g-modal { background: var(--panel, #131b2e); border: 1px solid var(--border, #1e2d4a); border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    @keyframes modalOverlayFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modalPop { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .g-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; animation: modalOverlayFade 0.25s ease; }
+    .g-modal { background: var(--panel, #131b2e); border: 1px solid var(--border, #1e2d4a); border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .g-modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border, #1e2d4a); display: flex; align-items: center; justify-content: space-between; }
     .g-modal-title { font-family: var(--fw, 'Rajdhani'), sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin:0;}
     .g-close-btn { background: none; border: none; color: var(--muted, #64748b); cursor: pointer; font-size: 16px; transition: color 0.2s; }
@@ -366,19 +368,69 @@ function injectAuthModal() {
     .g-form-input:focus { border-color: var(--accent, #00d4ff); }
     .btn-purple { background: var(--accent2, #7c3aed); color: #fff; display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--fb, 'Exo 2'); font-size: 13px; font-weight: 600; transition: all .2s; }
     .btn-purple:hover { background: #8b5cf6; box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+    
+    /* OVERRIDE GLOBAL TOASTS TO BOTTOM RIGHT ABOVE EVERYTHING */
+    .toasts { position: fixed !important; bottom: 24px !important; right: 24px !important; left: auto !important; top: auto !important; z-index: 999999 !important; display: flex !important; flex-direction: column !important; gap: 8px !important; pointer-events: none; }
+    .toasts .tst { animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important; pointer-events: all; }
+    @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   `;
   document.head.appendChild(style);
 }
 window.addEventListener('DOMContentLoaded', injectAuthModal);
 
-// Inject hamburger icon and sidebar toggle logic
+
+// Inject hamburger icon and responsive sidebar toggle logic
 document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style');
   style.innerHTML = `
-    .sidebar { transition: transform 0.3s ease; }
-    .sidebar.closed { transform: translateX(-100%); }
-    .main { transition: margin-left 0.3s ease; }
-    .layout.closed .main { margin-left: 0; }
+    .layout {
+      position: relative;
+      overflow-x: hidden; /* Avoid horizontal scroll during animations */
+    }
+    .sidebar { 
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      z-index: 200 !important; 
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 230px;
+    }
+    .main { 
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      min-width: 0; /* CRITICAL: Allows grid/flexbox to squeeze properly */
+      flex: 1;
+      margin-left: 230px;
+      box-sizing: border-box;
+    }
+    
+    /* Desktop toggle */
+    .layout.sidebar-hidden .sidebar {
+      transform: translateX(-100%);
+    }
+    .layout.sidebar-hidden .main {
+      margin-left: 0;
+    }
+
+    /* Mobile handling */
+    @media (max-width: 800px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .main {
+        margin-left: 0 !important; /* Main always full width */
+      }
+      .layout.sidebar-active .sidebar {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+      }
+      /* Semi-transparent overlay backdrop for mobile when active */
+      .layout.sidebar-active::before {
+        content: "";
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 150;
+      }
+    }
+
     .hamburger-btn {
       background: none;
       border: none;
@@ -390,6 +442,10 @@ document.addEventListener('DOMContentLoaded', () => {
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: color 0.2s;
+    }
+    .hamburger-btn:hover {
+      color: var(--accent, #00d4ff);
     }
   `;
   document.head.appendChild(style);
@@ -397,22 +453,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const topbar = document.querySelector('.topbar');
   const sidebar = document.querySelector('.sidebar');
   const main = document.querySelector('.main');
-  const layout = document.querySelector('.layout');
+  let layout = document.querySelector('.layout');
 
   if (topbar && sidebar && main) {
+    if (!layout) { layout = document.body; } // Fallback
+
     const titleDiv = topbar.querySelector('.tb-title');
     const hamburger = document.createElement('button');
     hamburger.innerHTML = '☰';
     hamburger.className = 'hamburger-btn';
+    
     hamburger.onclick = () => {
-      sidebar.classList.toggle('closed');
-      if (layout) {
-        layout.classList.toggle('closed');
+      const isMobile = window.innerWidth <= 800;
+      if (isMobile) {
+        layout.classList.toggle('sidebar-active');
+        layout.classList.remove('sidebar-hidden');
       } else {
-        main.style.marginLeft = sidebar.classList.contains('closed') ? '0' : '230px';
+        layout.classList.toggle('sidebar-hidden');
+        layout.classList.remove('sidebar-active');
       }
     };
     
+    // Close sidebar on mobile when clicking the main content area overlay
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 800 && layout.classList.contains('sidebar-active')) {
+         if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+           layout.classList.remove('sidebar-active');
+         }
+      }
+    });
+
     if (titleDiv) {
       const wrap = document.createElement('div');
       wrap.style.display = 'flex';

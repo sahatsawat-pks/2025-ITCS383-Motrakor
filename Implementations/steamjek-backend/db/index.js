@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+const { Pool } = require('@neondatabase/serverless');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
