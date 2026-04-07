@@ -1,27 +1,16 @@
 {
-  "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "Implementations/steamjek-backend/server.js",
-      "use": "@vercel/node"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "src": "Implementations/steamjek-frontend/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/Implementations/steamjek-backend/server.js"
+      "source": "/",
+      "destination": "/Implementations/steamjek-frontend/page1_store.html"
     },
     {
-      "src": "/",
-      "dest": "/Implementations/steamjek-frontend/page1_store.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/Implementations/steamjek-frontend/$1"
+      "source": "/(.*)",
+      "destination": "/Implementations/steamjek-frontend/$1"
     }
   ]
 }
