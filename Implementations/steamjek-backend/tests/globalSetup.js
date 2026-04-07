@@ -12,7 +12,7 @@ const path = require('node:path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 module.exports = async () => {
-  const { Pool } = require('@neondatabase/serverless');
+  const { Pool } = require('pg');
   const bcrypt = require('bcryptjs');
 
   let connStr = process.env.DATABASE_URL || '';
