@@ -118,9 +118,10 @@
 
     /* ── FILTER CHIPS ── */
     .filter-row { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap }
-    .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; color: var(--muted2); background: var(--panel) }
+    .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; color: var(--muted); background: var(--panel) }
     .chip:hover { border-color: var(--muted); color: var(--text) }
-    .chip.on { background: rgba(124,58,237,.15); border-color: var(--accent2); color: #a78bfa }
+    .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .chip.on { background: rgba(124,58,237,.15); border-color: var(--accent2); color: #ffffff }
 
     /* ── REWARD GRID ── */
     .reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px }
@@ -238,12 +239,12 @@
 
         <!-- SHOP TAB -->
         <div class="tab-panel on" id="tab-shop">
-          <div class="filter-row" id="type-filter">
-            <div class="chip on" data-type="All"          onclick="filterType(this)">✨ All</div>
-            <div class="chip"   data-type="avatar_frame"  onclick="filterType(this)">🖼 Avatar Frames</div>
-            <div class="chip"   data-type="badge"         onclick="filterType(this)">🏅 Badges</div>
-            <div class="chip"   data-type="banner"        onclick="filterType(this)">🎨 Banners</div>
-          </div>
+          <fieldset class="filter-row" id="type-filter" aria-label="Reward Types" style="border:none; padding:0; margin:0 0 22px 0;">
+            <button class="chip on" data-type="All"          onclick="filterType(this)">✨ All</button>
+            <button class="chip"   data-type="avatar_frame"  onclick="filterType(this)">🖼 Avatar Frames</button>
+            <button class="chip"   data-type="badge"         onclick="filterType(this)">🏅 Badges</button>
+            <button class="chip"   data-type="banner"        onclick="filterType(this)">🎨 Banners</button>
+          </fieldset>
           <div class="reward-grid" id="reward-grid">
             <div class="loading-pulse"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div>
           </div>
@@ -319,11 +320,11 @@
         if (r.is_equipped)  badges.push(`<span class="rbadge rb-equipped">⚡ Equipped</span>`);
 
         let actionBtns = '';
-        if (!r.is_redeemed) {
-          actionBtns = `<button class="btn btn-gold" id="redeem-btn-${r.id}" onclick="redeem(${r.id})">⭐ Redeem</button>`;
-        } else {
+        if (r.is_redeemed) {
           const eLabel = r.is_equipped ? '✓ Unequip' : '⚡ Equip';
           actionBtns = `<button class="btn btn-ghost" id="equip-btn-${r.id}" onclick="equip(${r.id})">${eLabel}</button>`;
+        } else {
+          actionBtns = `<button class="btn btn-gold" id="redeem-btn-${r.id}" onclick="redeem(${r.id})">⭐ Redeem</button>`;
         }
 
         return `
@@ -367,8 +368,8 @@
       if (res) {
         showToast(`Reward redeemed! −${res.points_spent} pts`, 's');
         await loadAll();
-      } else {
-        if (btn) { btn.disabled = false; btn.textContent = '⭐ Redeem' }
+      } else if (btn) {
+        btn.disabled = false; btn.textContent = '⭐ Redeem';
       }
     }
 

@@ -985,7 +985,7 @@
               <div class="ml-name">${ml.item_name}</div>
               <div class="ml-game">Active Listing</div>
             </div>
-            <div class="ml-price">$${parseFloat(ml.price).toFixed(2)}</div><span class="ml-status">Active</span>
+            <div class="ml-price">$${Number.parseFloat(ml.price).toFixed(2)}</div><span class="ml-status">Active</span>
           </div>
         `).join('');
       }
@@ -1050,7 +1050,7 @@
           <div class="ic-game">From: ${it.game_title}</div>
           <span class="ic-rarity-tag ${rt[rarity] || rt.common}">${rarity.toUpperCase()}</span>
           <div class="ic-footer">
-            <div class="ic-price">$${parseFloat(it.price).toFixed(2)}</div>
+            <div class="ic-price">$${Number.parseFloat(it.price).toFixed(2)}</div>
           </div>
           <div class="ic-seller">Listed by <span>${it.seller_name}</span></div>
           <button class="btn btn-purple ic-buy" style="margin-top:12px" onclick="buy('${it.id}', '${it.name}', '${it.price}')">Buy Now</button>
@@ -1089,7 +1089,7 @@
       }
       const res = await apiFetch(`/market/buy/${id}`, { method: 'POST' });
       if (res) {
-        showToast(`Purchased ${name} for $${parseFloat(price).toFixed(2)} ✨`, 's');
+        showToast(`Purchased ${name} for $${Number.parseFloat(price).toFixed(2)} ✨`, 's');
         await Auth.refreshUser(); // Sync balance
         loadListings();
         if (Auth.isAuthenticated()) {

@@ -46,11 +46,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const wrap = document.createElement('div');
       wrap.style.display = 'flex';
       wrap.style.alignItems = 'center';
-      titleDiv.parentNode.insertBefore(wrap, titleDiv);
+      titleDiv.before(wrap);
       wrap.appendChild(hamburger);
       wrap.appendChild(titleDiv);
     } else {
-      topbar.insertBefore(hamburger, topbar.firstChild);
+      topbar.prepend(hamburger);
     }
   }
 });

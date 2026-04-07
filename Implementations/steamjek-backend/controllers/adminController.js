@@ -20,7 +20,7 @@ const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
     // Prevent admin from deleting themselves
-    if (parseInt(id) === req.user.id) {
+    if (Number.parseInt(id) === req.user.id) {
       return res.status(400).json({ 
         message: 'You cannot delete your own account' 
       });

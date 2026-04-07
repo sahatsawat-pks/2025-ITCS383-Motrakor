@@ -110,7 +110,7 @@ const getReplies = async (req, res) => {
 // POST /api/community/threads/:id/replies
 const createReply = async (req, res) => {
   const user_id = req.user.id;
-  const thread_id = parseInt(req.params.id);
+  const thread_id = Number.parseInt(req.params.id);
   const { content } = req.body;
   if (!content) return res.status(400).json({ message: 'content is required' });
 
@@ -135,7 +135,7 @@ const createReply = async (req, res) => {
 // POST /api/community/threads/:id/like — toggle like
 const likeThread = async (req, res) => {
   const user_id = req.user.id;
-  const thread_id = parseInt(req.params.id);
+  const thread_id = Number.parseInt(req.params.id);
   try {
     const existing = await pool.query(
       'SELECT id FROM thread_likes WHERE thread_id=$1 AND user_id=$2',

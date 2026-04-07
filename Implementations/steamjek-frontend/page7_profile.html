@@ -978,7 +978,7 @@
       }
       const user = Auth.getUser();
       if (!user) {
-        window.location.href = 'page1_store.html';
+        globalThis.location.href = 'page1_store.html';
         return;
       }
       const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

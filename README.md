@@ -53,11 +53,19 @@ This project is configured as a Monorepo that deploys frontend and backend toget
 
 If you want to run the project locally on your machine instead of the cloud:
 
-### 1. Database Setup
-1. Ensure **PostgreSQL 16** is installed and running. Create a database named `steamjek`.
-2. Run the `Implementations/steamjek-backend/db/seed_data.sql` script inside your database to create tables and mock users (the default password for all mock users is `password123`).
+### Zero-Config Method
+Run our automated Bash script from the repository root which installs dependencies, seeds the database (with encrypted default test passwords), and runs the backend/frontend services before launching the Flutter app:
+```bash
+./run_project.sh
+```
 
-### 2. Backend Setup
+### Manual Method
+
+#### 1. Database & Password Setup
+1. Ensure **PostgreSQL 16** is installed and running. Create a database named `steamjek`.
+2. Navigate to `Implementations/steamjek-backend` and run `node db_seed.js`. This will automatically create all tables, insert mock data, and most importantly **fix all user passwords** by hashing `password123` properly with bcrypt.
+
+#### 2. Backend Setup
 ```bash
 git clone https://github.com/YOUR_USERNAME/2025-ITCS383-Motrakor.git
 cd Implementations/steamjek-backend
@@ -84,7 +92,7 @@ Start the backend server:
 npm run dev
 ```
 
-### 3. Frontend Setup
+#### 3. Frontend Setup
 Open a new terminal window:
 ```bash
 cd Implementations/steamjek-frontend
@@ -92,9 +100,18 @@ npm install
 npm start
 ```
 
-### 4. Access the App
+#### 4. Mobile Setup
+Open a third terminal window:
+```bash
+cd Implementations/steamjek-mobile
+flutter pub get
+flutter run
+```
+
+#### 5. Access the App
 - **Backend API:** `http://localhost:3000`
 - **Frontend Web:** `http://127.0.0.1:8080` (or whichever port `npm start` provides)
+- **Mobile Emulation:** Deploys directly to your running simulator.
 
 ---
 

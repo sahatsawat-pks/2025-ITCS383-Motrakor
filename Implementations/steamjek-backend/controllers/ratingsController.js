@@ -6,7 +6,7 @@ const getGameRatings = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT ratings.id, users.name, ratings.rating, 
-              ratings.comment as review, ratings.created_at
+              ratings.review, ratings.created_at
        FROM ratings
        JOIN users ON ratings.user_id = users.id
        WHERE ratings.game_id = $1
@@ -62,7 +62,7 @@ const rateGame = async (req, res) => {
     if (existing.rows.length > 0) {
       // Update existing rating
       const updated = await pool.query(
-        `UPDATE ratings SET rating = $1, comment = $2 
+        `UPDATE ratings SET rating = $1, review = $2 
          WHERE user_id = $3 AND game_id = $4 RETURNING *`,
         [rating, review, user_id, gameId]
       );
@@ -74,7 +74,7 @@ const rateGame = async (req, res) => {
 
     // Insert new rating
     const newRating = await pool.query(
-      `INSERT INTO ratings (user_id, game_id, rating, comment) 
+      `INSERT INTO ratings (user_id, game_id, rating, review) 
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [user_id, gameId, rating, review]
     );

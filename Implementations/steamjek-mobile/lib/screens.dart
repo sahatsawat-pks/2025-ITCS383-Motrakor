@@ -38,10 +38,12 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_game == null)
+    }
+    if (_game == null) {
       return const Scaffold(body: Center(child: Text('Game not found')));
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(_game!['title'] ?? 'Game Detail')),

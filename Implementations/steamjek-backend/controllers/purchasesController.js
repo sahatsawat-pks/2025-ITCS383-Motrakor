@@ -38,7 +38,7 @@ const createPaymentIntent = async (req, res) => {
     }
 
     const total = cartItems.rows.reduce(
-      (sum, item) => sum + parseFloat(item.price), 0
+      (sum, item) => sum + Number.parseFloat(item.price), 0
     );
     const totalCents = Math.round(total * 100);
 
@@ -95,7 +95,7 @@ const confirmPurchase = async (req, res) => {
     }
 
     total = cartItems.rows.reduce(
-      (sum, item) => sum + parseFloat(item.price), 0
+      (sum, item) => sum + Number.parseFloat(item.price), 0
     );
 
     if (payment_intent_id === 'free_purchase') {
