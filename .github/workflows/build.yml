@@ -53,6 +53,7 @@ jobs:
           DB_USER: user
           DB_PASSWORD: password
           JWT_SECRET: test_secret
+          STRIPE_SECRET_KEY: sk_test_4eC39HqLyjWDarjtT1zdp7dc
         run: |
           cd Implementations/steamjek-backend
           npm run test:coverage
