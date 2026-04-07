@@ -25,38 +25,47 @@ async function apiFetch(endpoint, options = {}) {
 
     if (!response.ok) {
       showToast(data.message || 'Request failed', 'e');
-      return null;
+      throw new Error(data.message || 'Request failed'); // Throw so caller knows it failed
     }
 
     return data;
   } catch (err) {
-    showToast('Network error. Is the backend running?', 'e');
-    return null;
+    if (!err.message || err.message === 'Failed to fetch') {
+      showToast('Network error. Is the backend running?', 'e');
+    }
+    throw err;
   }
 }
 
 // Global Auth State Management
 const Auth = {
   login: async (email, password) => {
-    const data = await apiFetch('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    if (data) {
-      localStorage.setItem('steamjek_token', data.token);
-      localStorage.setItem('steamjek_user', JSON.stringify(data.user));
-      // Trigger sidebar update
-      updateSidebarUser();
+    try {
+      const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      if (data && data.token) {
+        localStorage.setItem('steamjek_token', data.token);
+        localStorage.setItem('steamjek_user', JSON.stringify(data.user));
+        updateSidebarUser();
+        return data;
+      }
+    } catch (err) {
+      return null; // Return null on failure instead of crashing the app silently
     }
-    return data;
   },
   
   register: async (name, email, password, address) => {
-    const data = await apiFetch('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ name, email, password, address }),
-    });
-    return data;
+    try {
+      const data = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password, address }),
+      });
+      return data;
+    } catch (err) {
+      return null;
+    }
   },
 
   logout: () => {
@@ -72,15 +81,70 @@ const Auth = {
 
   refreshUser: async () => {
     if (!Auth.isAuthenticated()) return null;
-    const user = await apiFetch('/auth/profile');
-    if (user) {
-      localStorage.setItem('steamjek_user', JSON.stringify(user));
-      updateSidebarUser();
+    try {
+      const user = await apiFetch('/auth/profile');
+      if (user) {
+        localStorage.setItem('steamjek_user', JSON.stringify(user));
+        updateSidebarUser();
+      }
+      return user;
+    } catch(err) {
+      return null;
     }
-    return user;
   },
 
-  isAuthenticated: () => !!localStorage.getItem('steamjek_token')
+  isAuthenticated: () => !!localStorage.getItem('steamjek_token'),
+
+  // --- GLOBAL AUTH MODAL METHODS ---
+  showModal: () => {
+    const overlay = document.getElementById('g-auth-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  },
+
+  closeModal: () => {
+    const overlay = document.getElementById('g-auth-overlay');
+    if (overlay) overlay.style.display = 'none';
+  },
+
+  switchTab: (tab) => {
+    document.getElementById('g-tab-login').classList.toggle('active', tab === 'login');
+    document.getElementById('g-tab-register').classList.toggle('active', tab === 'register');
+    document.getElementById('g-login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('g-register-form').style.display = tab === 'register' ? 'block' : 'none';
+  },
+
+  handleLoginSubmit: async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('g-login-email').value;
+    const pass = document.getElementById('g-login-password').value;
+    const res = await Auth.login(email, pass);
+    if (res) {
+      Auth.closeModal();
+      showToast('Successfully logged in!', 's');
+      document.getElementById('g-login-password').value = '';
+      setTimeout(() => {
+        if (window.initPage) { window.initPage(); } else { window.location.reload(); }
+      }, 500);
+    }
+  },
+
+  handleRegisterSubmit: async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('g-reg-username').value;
+    const email = document.getElementById('g-reg-email').value;
+    const pass = document.getElementById('g-reg-password').value;
+    const addr = document.getElementById('g-reg-address').value;
+    const res = await Auth.register(name, email, pass, addr);
+    if (res) {
+      showToast('Account created! Logging in...', 's');
+      const loginRes = await Auth.login(email, pass);
+      if (loginRes) {
+        Auth.closeModal();
+        if (window.initPage) window.initPage();
+        else window.location.reload();
+      }
+    }
+  }
 };
 
 // Updates the sidebar user pill with real user data
@@ -102,13 +166,13 @@ function updateSidebarUser() {
       </div>`;
   } else {
     pill.innerHTML = `
-      <a href="page1_store.html" class="user-pill">
+      <div class="user-pill" style="cursor:pointer" onclick="Auth.showModal()">
         <div class="u-av">?</div>
         <div>
           <div class="u-name">Not Logged In</div>
           <div class="u-bal">Click to login</div>
         </div>
-      </a>`;
+      </div>`;
   }
 }
 
@@ -232,4 +296,132 @@ const Community = {
 document.addEventListener('DOMContentLoaded', () => {
   updateSidebarUser();
   updateBadges();
+});
+function injectAuthModal() {
+  if (document.getElementById('g-auth-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'g-modal-overlay';
+  overlay.id = 'g-auth-overlay';
+  overlay.innerHTML = `
+    <div class="g-modal">
+      <div class="g-modal-head">
+        <h3 class="g-modal-title" id="auth-title">Welcome to SteamJek</h3>
+        <button class="g-close-btn" onclick="Auth.closeModal()">✕</button>
+      </div>
+      <div class="g-modal-body">
+        <div class="g-auth-tabs">
+          <div class="g-auth-tab active" id="g-tab-login" onclick="Auth.switchTab('login')">Login</div>
+          <div class="g-auth-tab" id="g-tab-register" onclick="Auth.switchTab('register')">Register</div>
+        </div>
+        <form id="g-login-form" onsubmit="Auth.handleLoginSubmit(event)">
+          <div class="g-form-group">
+            <label class="g-form-label">Email</label>
+            <input type="email" class="g-form-input" id="g-login-email" required>
+          </div>
+          <div class="g-form-group">
+            <label class="g-form-label">Password</label>
+            <input type="password" class="g-form-input" id="g-login-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">Login</button>
+        </form>
+        <form id="g-register-form" style="display: none;" onsubmit="Auth.handleRegisterSubmit(event)">
+          <div class="g-form-group">
+            <label class="g-form-label">Username</label>
+            <input type="text" class="g-form-input" id="g-reg-username" required>
+          </div>
+          <div class="g-form-group">
+            <label class="g-form-label">Email</label>
+            <input type="email" class="g-form-input" id="g-reg-email" required>
+          </div>
+          <div class="g-form-group">
+            <label class="g-form-label">Password</label>
+            <input type="password" class="g-form-input" id="g-reg-password" required>
+          </div>
+           <div class="g-form-group">
+            <label class="g-form-label">Address</label>
+            <input type="text" class="g-form-input" id="g-reg-address" required>
+          </div>
+          <button type="submit" class="btn btn-purple" style="width: 100%; justify-content: center; margin-top: 10px;">Create Account</button>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .g-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .g-modal { background: var(--panel, #131b2e); border: 1px solid var(--border, #1e2d4a); border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .g-modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border, #1e2d4a); display: flex; align-items: center; justify-content: space-between; }
+    .g-modal-title { font-family: var(--fw, 'Rajdhani'), sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin:0;}
+    .g-close-btn { background: none; border: none; color: var(--muted, #64748b); cursor: pointer; font-size: 16px; transition: color 0.2s; }
+    .g-close-btn:hover { color: #fff; }
+    .g-modal-body { padding: 24px; }
+    .g-auth-tabs { display: flex; gap: 4px; background: var(--bg2, #0c0f1a); padding: 4px; border-radius: 8px; margin-bottom: 24px; }
+    .g-auth-tab { flex: 1; padding: 8px 0; text-align: center; font-size: 14px; font-weight: 600; color: var(--muted2, #94a3b8); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
+    .g-auth-tab.active { background: var(--panel2, #1a2540); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .g-form-group { margin-bottom: 16px; }
+    .g-form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted, #64748b); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .g-form-input { width: 100%; background: var(--bg2, #0c0f1a); border: 1px solid var(--border, #1e2d4a); border-radius: 8px; padding: 10px 14px; color: var(--text, #e2e8f0); font-family: var(--fm, 'JetBrains Mono'); font-size: 14px; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+    .g-form-input:focus { border-color: var(--accent, #00d4ff); }
+    .btn-purple { background: var(--accent2, #7c3aed); color: #fff; display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--fb, 'Exo 2'); font-size: 13px; font-weight: 600; transition: all .2s; }
+    .btn-purple:hover { background: #8b5cf6; box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+  `;
+  document.head.appendChild(style);
+}
+window.addEventListener('DOMContentLoaded', injectAuthModal);
+
+// Inject hamburger icon and sidebar toggle logic
+document.addEventListener('DOMContentLoaded', () => {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .sidebar { transition: transform 0.3s ease; }
+    .sidebar.closed { transform: translateX(-100%); }
+    .main { transition: margin-left 0.3s ease; }
+    .layout.closed .main { margin-left: 0; }
+    .hamburger-btn {
+      background: none;
+      border: none;
+      color: var(--text, #fff);
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 15px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const topbar = document.querySelector('.topbar');
+  const sidebar = document.querySelector('.sidebar');
+  const main = document.querySelector('.main');
+  const layout = document.querySelector('.layout');
+
+  if (topbar && sidebar && main) {
+    const titleDiv = topbar.querySelector('.tb-title');
+    const hamburger = document.createElement('button');
+    hamburger.innerHTML = '☰';
+    hamburger.className = 'hamburger-btn';
+    hamburger.onclick = () => {
+      sidebar.classList.toggle('closed');
+      if (layout) {
+        layout.classList.toggle('closed');
+      } else {
+        main.style.marginLeft = sidebar.classList.contains('closed') ? '0' : '230px';
+      }
+    };
+    
+    if (titleDiv) {
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.alignItems = 'center';
+      titleDiv.parentNode.insertBefore(wrap, titleDiv);
+      wrap.appendChild(hamburger);
+      wrap.appendChild(titleDiv);
+    } else {
+      topbar.insertBefore(hamburger, topbar.firstChild);
+    }
+  }
 });

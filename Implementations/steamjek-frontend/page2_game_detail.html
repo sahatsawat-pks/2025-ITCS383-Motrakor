@@ -912,7 +912,7 @@
     let globalGameDetails = null;
 
     // --- AUTH FLOW ---
-    function showAuthModal() { document.getElementById('auth-overlay').style.display = 'flex'; }
+    function Auth.showModal() { document.getElementById('auth-overlay').style.display = 'flex'; }
     function closeAuthModal() { document.getElementById('auth-overlay').style.display = 'none'; }
     
     function switchAuthTab(tab) {
@@ -987,7 +987,7 @@
         const authBtn = document.createElement('button');
         authBtn.innerHTML = `👤 Login / Register`;
         authBtn.className = 'btn btn-primary btn-sm';
-        authBtn.onclick = showAuthModal;
+        authBtn.onclick = Auth.showModal;
         tbRight.appendChild(authBtn);
         updateSidebarUser();
       }
@@ -1119,7 +1119,7 @@
     async function toggleCart() { 
       if (!Auth.isAuthenticated()) {
         showToast('Please login to add to cart', 'i');
-        showAuthModal();
+        Auth.showModal();
         return;
       }
       
@@ -1208,7 +1208,7 @@
     async function toggleWish() { 
       if (!Auth.isAuthenticated()) {
         showToast('Please login to wishlist games', 'i');
-        showAuthModal();
+        Auth.showModal();
         return;
       }
       

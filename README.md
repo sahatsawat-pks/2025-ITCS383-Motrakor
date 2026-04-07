@@ -18,59 +18,53 @@ SteamJek is a full-stack digital game distribution platform featuring:
 - **JWT Authentication** — Secure login and registration system
 
 ---
-## How to run (Just from EXE)
-Download An EXE FROM THIS link  https://drive.google.com/file/d/1M3M4b4493s-jDjHtHWgLhGj-Ev3_VrhS/view?usp=sharing
-
-## 🛠 Tech Stack
-
-| Layer | Technology | Version |
-|---|---|---|
-| Runtime | Node.js | v22 |
-| Framework | Express.js | ^5.2.1 |
-| Database | PostgreSQL | 16 |
-| Authentication | JSON Web Token (JWT) | ^9.0.3 |
-| Password Hashing | bcryptjs | ^3.0.3 |
-| Payment Processing | Stripe | ^20.4.1 |
-| Environment Config | dotenv | ^17.3.1 |
-| Cross-Origin | cors | ^2.8.6 |
-| Dev Server | nodemon | ^3.1.14 |
-| Testing | Jest + Supertest | ^29.7.0 / ^7.0.0 |
-| API Testing | Postman | — |
+## ✨ Recent Feature Implementations
+- **Single Vercel Project Deployment (Monorepo):** Configured `vercel.json` and a root `/api/index.js` to serve the Node.js Express backend as Vercel Serverless Functions while statically hosting the frontend on the same domain, avoiding CORS issues and multiple deployments.
+- **Dynamic NeonDB SSL Connection:** Updated the database pool in `db/index.js` to automatically parse `DATABASE_URL` and append `sslmode=require` for secure production database connections.
+- **Unified Database Seeding:** Merged all schema migrations (v1 and v2) and mock data into a single, bulletproof `seed_data.sql` file to instantly reset and rebuild the exact database state required to run the app.
+- **Cross-Platform Mobile Networking:** Updated the Flutter mobile app (`api_service.dart`) to correctly route to `10.0.2.2` (Android emulator) vs `127.0.0.1` (Web/iOS), preventing localhost loopback issues during mobile development.
 
 ---
 
-## ✅ Prerequisites
+## ☁️ Cloud Deployment Guide (Vercel & NeonDB)
 
-Before running the test for this project, make sure you have the following installed:
+### 1. Database (NeonDB)
+1. Create a free PostgreSQL instance on [Neon.tech](https://neon.com).
+2. Copy your connection string. It will look like:
+   `postgresql://[user]:[password]@[host].neon.tech/[dbname]?sslmode=require`
+3. In the Neon **SQL Editor**, paste and run the entire contents of `Implementations/steamjek-backend/db/seed_data.sql` to initialize all tables and insert demo data.
 
-- **Node.js** v18 or higher — https://nodejs.org
-- **PostgreSQL 16** — https://www.postgresql.org/download
-- **Neon Database** (optional, for database management) — https://neon.com/
-- **Git** — https://git-scm.com
-- **Postman** (optional, for API testing) — https://www.postman.com
-- **Stripe Account** (for payment simulation) — https://stripe.com
+### 2. Hosting (Vercel)
+This project is configured as a Monorepo that deploys frontend and backend together.
+1. Push your repository to GitHub.
+2. Sign in to [Vercel](https://vercel.com) and click **Add New Project**.
+3. Import your repository. Keep the "Root Directory" as the repository root (`/`).
+4. Under **Environment Variables**, add the following:
+   - `DATABASE_URL`: Your exact NeonDB connection string.
+   - `JWT_SECRET`: A secure, random string for authentication.
+   - `STRIPE_SECRET_KEY`: Your Stripe test key (`sk_test_...`).
+5. Click **Deploy**. Vercel will automatically:
+   - Route any request to `/api/*` to the Express backend (via `vercel.json`).
+   - Serve the frontend files statically at the root URL.
 
 ---
 
-## 🚀 Build & test Instructions
+## 🚀 Quick Start Guide (Localhost)
 
-### 1 — Clone the Repository
+If you want to run the project locally on your machine instead of the cloud:
 
+### 1. Database Setup
+1. Ensure **PostgreSQL 16** is installed and running. Create a database named `steamjek`.
+2. Run the `Implementations/steamjek-backend/db/seed_data.sql` script inside your database to create tables and mock users (the default password for all mock users is `password123`).
+
+### 2. Backend Setup
 ```bash
 git clone https://github.com/YOUR_USERNAME/2025-ITCS383-Motrakor.git
 cd Implementations/steamjek-backend
-```
-
-### 2 — Install Dependencies
-
-```bash
 npm install
 ```
 
-### 3 — Configure Environment Variables
-
-Create a `.env` file in the root of `steamjek-backend/`:
-
+Create a `.env` file in `steamjek-backend/`:
 ```env
 PORT=3000
 JWT_SECRET=your_jwt_secret_key_here
@@ -85,121 +79,22 @@ STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
 ```
 
-> Get your Stripe test keys from https://dashboard.stripe.com → Developers → API Keys
-
-### 4 — Set Up the Database
-
-Open **pgAdmin 4** or any PostgreSQL client and run the following SQL:
-
-```sql
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  address TEXT,
-  credit_card_token VARCHAR(255),
-  role VARCHAR(20) DEFAULT 'user',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE games (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  genre VARCHAR(100),
-  price DECIMAL(10,2) NOT NULL,
-  age_rating VARCHAR(20),
-  creator_id INTEGER REFERENCES users(id),
-  file_url VARCHAR(255),
-  cover_image VARCHAR(255),
-  system_requirements TEXT,
-  is_approved BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE cart (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
-  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, game_id)
-);
-
-CREATE TABLE purchases (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
-  amount DECIMAL(10,2) NOT NULL,
-  purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE wishlist (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
-  added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, game_id)
-);
-
-CREATE TABLE ratings (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
-  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-  review TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, game_id)
-);
-
-CREATE TABLE item_types (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  description TEXT,
-  game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
-  image_url VARCHAR(255),
-  rarity VARCHAR(50) DEFAULT 'common',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE user_items (
-  id SERIAL PRIMARY KEY,
-  owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  item_type_id INTEGER REFERENCES item_types(id) ON DELETE CASCADE,
-  quantity INTEGER DEFAULT 1 CHECK (quantity >= 0),
-  acquired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(owner_id, item_type_id)
-);
-
-CREATE TABLE market_listings (
-  id SERIAL PRIMARY KEY,
-  item_type_id INTEGER REFERENCES item_types(id) ON DELETE CASCADE,
-  seller_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  quantity INTEGER DEFAULT 1 CHECK (quantity >= 1),
-  price DECIMAL(10,2) NOT NULL,
-  is_sold BOOLEAN DEFAULT false,
-  listed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE market_transactions (
-  id SERIAL PRIMARY KEY,
-  listing_id INTEGER REFERENCES market_listings(id),
-  buyer_id INTEGER REFERENCES users(id),
-  seller_id INTEGER REFERENCES users(id),
-  item_type_id INTEGER REFERENCES item_types(id),
-  quantity INTEGER NOT NULL,
-  price DECIMAL(10,2) NOT NULL,
-  sold_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### 5 — Start the Development Server
-
+Start the backend server:
 ```bash
 npm run dev
 ```
 
-Server starts at: **http://localhost:3000** ✅
+### 3. Frontend Setup
+Open a new terminal window:
+```bash
+cd Implementations/steamjek-frontend
+npm install
+npm start
+```
+
+### 4. Access the App
+- **Backend API:** `http://localhost:3000`
+- **Frontend Web:** `http://127.0.0.1:8080` (or whichever port `npm start` provides)
 
 ---
 

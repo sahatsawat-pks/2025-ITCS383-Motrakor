@@ -1,0 +1,21 @@
+  <script>
+    // --- AUTH UI LOGIC ---
+    function updateTopBar() {
+      const authBtn = document.getElementById('auth-btn');
+      const cartWrap = document.getElementById('nav-cart');
+      
+      if (Auth.isAuthenticated()) {
+        const user = Auth.getUser();
+        authBtn.innerHTML = `👤 ${user.name} (Logout)`;
+        authBtn.className = 'btn btn-ghost btn-sm';
+        authBtn.onclick = () => { Auth.logout(); window.location.reload(); };
+        cartWrap.style.display = 'block';
+        updateSidebarUser();
+      } else {
+        authBtn.innerHTML = `👤 Login / Register`;
+        authBtn.className = 'btn btn-primary btn-sm';
+        authBtn.onclick = Auth.showModal;
+        cartWrap.style.display = 'none';
+        updateSidebarUser();
+      }
+    }
