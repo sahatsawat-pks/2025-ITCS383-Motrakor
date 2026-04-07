@@ -10,6 +10,8 @@ const wishlistRoutes = require('./routes/wishlist');
 const ratingsRoutes = require('./routes/ratings');
 const marketRoutes = require('./routes/market');
 const adminRoutes = require('./routes/admin');
+const pointShopRoutes = require('./routes/pointShop');
+const communityRoutes = require('./routes/community');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,13 +26,11 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/ratings', ratingsRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/points', pointShopRoutes);
+app.use('/api/community', communityRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'SteamJek API is running!' });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
 });
 
 if (require.main === module) {

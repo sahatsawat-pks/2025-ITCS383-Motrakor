@@ -123,10 +123,17 @@ const confirmPurchase = async (req, res) => {
     // Clear cart
     await pool.query('DELETE FROM cart WHERE user_id = $1', [user_id]);
 
+    // Award points: 100 pts per $3 spent
+    const pointsEarned = Math.floor(total / 3) * 100;
+    if (pointsEarned > 0) {
+      await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [pointsEarned, user_id]);
+    }
+
     res.status(201).json({
       message: 'Purchase successful',
       items_purchased: cartItems.rows.length,
       total_amount: total.toFixed(2),
+      points_earned: pointsEarned,
       payment_intent_id
     });
 

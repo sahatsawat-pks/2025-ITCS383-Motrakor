@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SteamJek — Point Shop</title>
+  <meta name="description" content="Earn points from game purchases and redeem them for exclusive avatar frames, badges, and profile banners on SteamJek.">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="api.js"></script>
+  <style>
+    :root {
+      --bg: #07090f; --bg2: #0c0f1a; --panel: #131b2e; --panel2: #1a2540;
+      --border: #1e2d4a; --border2: #253656;
+      --accent: #00d4ff; --accent2: #7c3aed; --gold: #f59e0b;
+      --red: #ef4444; --green: #10b981;
+      --text: #e2e8f0; --muted: #64748b; --muted2: #94a3b8;
+      --fw: 'Rajdhani', sans-serif; --fb: 'Exo 2', sans-serif; --fm: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box }
+    body { background: var(--bg); color: var(--text); font-family: var(--fb); min-height: 100vh }
+    ::-webkit-scrollbar { width: 5px }
+    ::-webkit-scrollbar-track { background: var(--bg2) }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; min-height: 100vh }
+    .sidebar {
+      width: 230px; background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100
+    }
+    .main { margin-left: 230px; flex: 1 }
+    .logo { padding: 24px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px }
+    .logo-mark {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-family: var(--fw); font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0
+    }
+    .logo-text { font-family: var(--fw); font-weight: 700; font-size: 22px; letter-spacing: 1px }
+    .logo-text em { color: var(--accent); font-style: normal }
+    .nav-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; color: var(--muted); text-transform: uppercase }
+    .nav-link {
+      display: flex; align-items: center; gap: 11px; padding: 11px 20px;
+      color: var(--muted2); font-size: 14px; font-weight: 500; cursor: pointer;
+      border-left: 3px solid transparent; transition: all .2s; text-decoration: none
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,.03) }
+    .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,212,255,.06) }
+    .nav-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0 }
+    .nav-badge { margin-left: auto; background: var(--accent2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; font-family: var(--fm) }
+    .sidebar-foot { padding: 16px; border-top: 1px solid var(--border); margin-top: auto }
+    .user-pill { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--panel); border-radius: 10px; cursor: pointer; transition: background .2s; border: 1px solid var(--border); text-decoration: none }
+    .user-pill:hover { background: var(--panel2) }
+    .u-av { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--accent2), var(--accent)); display: flex; align-items: center; justify-content: center; font-family: var(--fw); font-weight: 700; font-size: 14px; flex-shrink: 0 }
+    .u-name { font-size: 13px; font-weight: 600; color: var(--text) }
+    .u-bal { font-size: 11px; color: var(--gold); font-family: var(--fm) }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 50; height: 62px;
+      background: rgba(7,9,15,.92); backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px; padding: 0 28px
+    }
+    .tb-title { font-family: var(--fw); font-size: 20px; font-weight: 700; letter-spacing: .5px }
+    .tb-right { display: flex; align-items: center; gap: 8px; margin-left: auto }
+
+    /* ── BUTTON ── */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--fb); font-size: 13px; font-weight: 600; transition: all .2s; text-decoration: none; letter-spacing: .2px }
+    .btn-primary { background: var(--accent); color: #000 }
+    .btn-primary:hover { background: #22e0ff; box-shadow: 0 0 22px rgba(0,212,255,.35) }
+    .btn-ghost { background: transparent; color: var(--muted2); border: 1px solid var(--border) }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); background: rgba(255,255,255,.04) }
+    .btn-sm { padding: 6px 13px; font-size: 12px }
+    .btn-gold { background: linear-gradient(135deg, var(--gold), #d97706); color: #000 }
+    .btn-gold:hover { box-shadow: 0 0 22px rgba(245,158,11,.35) }
+    .btn:disabled { opacity: .45; cursor: not-allowed }
+
+    /* ── CONTENT ── */
+    .content { padding: 28px }
+
+    /* ── POINTS BANNER ── */
+    .pts-banner {
+      background: linear-gradient(135deg, #161f38 0%, #1e1040 50%, #0e1a2e 100%);
+      border: 1px solid rgba(124,58,237,.3);
+      border-radius: 20px; padding: 32px 36px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; position: relative; overflow: hidden
+    }
+    .pts-banner::before {
+      content: ''; position: absolute; top: -60px; right: 60px;
+      width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,.18) 0%, transparent 70%);
+      pointer-events: none
+    }
+    .pts-banner::after {
+      content: ''; position: absolute; bottom: -40px; left: 30px;
+      width: 180px; height: 180px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,212,255,.08) 0%, transparent 70%);
+      pointer-events: none
+    }
+    .pts-left { position: relative }
+    .pts-label { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted2); margin-bottom: 6px }
+    .pts-value { font-family: var(--fw); font-size: 56px; font-weight: 700; line-height: 1; background: linear-gradient(135deg, var(--gold), #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text }
+    .pts-sub { font-size: 13px; color: var(--muted); margin-top: 6px }
+    .pts-sub strong { color: var(--accent2); -webkit-text-fill-color: #a78bfa }
+    .pts-right { display: flex; gap: 16px; position: relative }
+    .pts-stat { text-align: center; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px }
+    .pts-stat-val { font-family: var(--fw); font-size: 26px; font-weight: 700; color: var(--accent) }
+    .pts-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 3px }
+
+    /* ── TABS ── */
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg2); border-radius: 10px; padding: 5px }
+    .tab-btn { flex: 1; padding: 10px; text-align: center; border-radius: 7px; border: none; cursor: pointer; font-family: var(--fb); font-size: 13px; font-weight: 600; color: var(--muted2); background: transparent; transition: all .2s }
+    .tab-btn.on { background: var(--panel2); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,.3) }
+    .tab-panel { display: none }
+    .tab-panel.on { display: block }
+
+    /* ── FILTER CHIPS ── */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap }
+    .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; color: var(--muted2); background: var(--panel) }
+    .chip:hover { border-color: var(--muted); color: var(--text) }
+    .chip.on { background: rgba(124,58,237,.15); border-color: var(--accent2); color: #a78bfa }
+
+    /* ── REWARD GRID ── */
+    .reward-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px }
+    .reward-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 14px;
+      transition: all .3s; position: relative; overflow: hidden
+    }
+    .reward-card:hover { border-color: var(--border2); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.4) }
+    .reward-card.redeemed { border-color: rgba(16,185,129,.3) }
+    .reward-card.equipped { border-color: rgba(245,158,11,.5); box-shadow: 0 0 20px rgba(245,158,11,.12) }
+    .reward-icon { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; flex-shrink: 0 }
+    .ri-frame  { background: linear-gradient(135deg, rgba(0,212,255,.15), rgba(124,58,237,.15)); border: 2px solid var(--accent) }
+    .ri-badge  { background: linear-gradient(135deg, rgba(245,158,11,.15), rgba(239,68,68,.12)); border: 2px solid var(--gold) }
+    .ri-banner { background: linear-gradient(135deg, rgba(124,58,237,.15), rgba(16,185,129,.1)); border: 2px solid #a78bfa }
+    .reward-name { font-family: var(--fw); font-size: 17px; font-weight: 700; text-align: center }
+    .reward-desc { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5 }
+    .reward-cost { font-family: var(--fm); font-size: 18px; font-weight: 700; color: var(--gold); display: flex; align-items: center; gap: 5px }
+    .reward-badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center }
+    .rbadge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px }
+    .rb-redeemed { background: rgba(16,185,129,.12); color: var(--green); border: 1px solid rgba(16,185,129,.25) }
+    .rb-equipped  { background: rgba(245,158,11,.12); color: var(--gold);  border: 1px solid rgba(245,158,11,.25) }
+    .reward-actions { display: flex; gap: 8px; width: 100%; justify-content: center }
+    .reward-actions .btn { font-size: 12px; padding: 7px 14px }
+
+    /* ── MY REWARDS LIST ── */
+    .my-reward-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; transition: border-color .2s }
+    .my-reward-item.equipped { border-color: rgba(245,158,11,.4) }
+    .my-ri-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0 }
+    .my-ri-info { flex: 1 }
+    .my-ri-name { font-family: var(--fw); font-size: 16px; font-weight: 700 }
+    .my-ri-meta { font-size: 12px; color: var(--muted); margin-top: 3px }
+
+    /* ── LOADING / EMPTY ── */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted) }
+    .empty-icon { font-size: 52px; margin-bottom: 14px }
+    .empty-title { font-family: var(--fw); font-size: 20px; color: var(--muted2); margin-bottom: 8px }
+    .loading-pulse { display: flex; justify-content: center; padding: 60px; gap: 8px }
+    .pulse-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite }
+    .pulse-dot:nth-child(2) { animation-delay: .2s; background: var(--accent2) }
+    .pulse-dot:nth-child(3) { animation-delay: .4s; background: var(--gold) }
+    @keyframes pulse { 0%,100%{opacity:.2;transform:scale(.8)} 50%{opacity:1;transform:scale(1.1)} }
+
+    /* ── TOAST ── */
+    .toasts { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px }
+    .tst { background: var(--panel2); border: 1px solid var(--border2); border-radius: 10px; padding: 13px 20px; display: flex; align-items: center; gap: 11px; font-size: 13px; font-weight: 500; min-width: 280px; box-shadow: 0 8px 32px rgba(0,0,0,.4); animation: slideIn .3s ease }
+    .tst.s { border-left: 3px solid var(--green) }
+    .tst.e { border-left: 3px solid var(--red) }
+    .tst.i { border-left: 3px solid var(--accent) }
+    @keyframes slideIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .content > * { animation: fadeUp .4s ease both }
+    .content > *:nth-child(1){animation-delay:.04s}
+    .content > *:nth-child(2){animation-delay:.1s}
+    .content > *:nth-child(3){animation-delay:.16s}
+    .content > *:nth-child(4){animation-delay:.22s}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="logo">
+        <div class="logo-mark">SJ</div>
+        <div class="logo-text">Steam<em>Jek</em></div>
+      </div>
+      <div class="nav-section">Discover</div>
+      <a class="nav-link" href="page1_store.html"><span class="nav-icon">🏪</span>Store</a>
+      <a class="nav-link" href="page5_wishlist.html"><span class="nav-icon">❤️</span>Wishlist<span class="nav-badge" id="wish-count">0</span></a>
+      <a class="nav-link" href="page9_community.html"><span class="nav-icon">🌐</span>Community</a>
+      <div class="nav-section">Library</div>
+      <a class="nav-link" href="page6_library.html"><span class="nav-icon">🎮</span>My Games</a>
+      <div class="nav-section">Market</div>
+      <a class="nav-link" href="page4_marketplace.html"><span class="nav-icon">⚔️</span>Item Market</a>
+      <div class="nav-section">Account</div>
+      <a class="nav-link active" href="page8_point_shop.html"><span class="nav-icon">⭐</span>Point Shop</a>
+      <a class="nav-link" href="page7_profile.html"><span class="nav-icon">👤</span>Profile</a>
+      <a class="nav-link" href="page3_cart.html"><span class="nav-icon">🛒</span>Cart<span class="nav-badge" id="cart-badge">0</span></a>
+      <div class="sidebar-foot" id="user-context"></div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="tb-title">⭐ Point Shop</div>
+        <div class="tb-right">
+          <div style="font-family:var(--fm);font-size:13px;color:var(--gold)">⭐ <span id="tb-pts">—</span> pts</div>
+          <a href="page3_cart.html" class="btn btn-ghost btn-sm">🛒 Cart</a>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- POINTS BANNER -->
+        <div class="pts-banner">
+          <div class="pts-left">
+            <div class="pts-label">Your Balance</div>
+            <div class="pts-value" id="pts-display">0</div>
+            <div class="pts-sub">Earn <strong>100 pts</strong> for every $3 spent on games</div>
+          </div>
+          <div class="pts-right">
+            <div class="pts-stat">
+              <div class="pts-stat-val" id="stat-redeemed">0</div>
+              <div class="pts-stat-lbl">Redeemed</div>
+            </div>
+            <div class="pts-stat">
+              <div class="pts-stat-val" id="stat-equipped">0</div>
+              <div class="pts-stat-lbl">Equipped</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tab-bar">
+          <button class="tab-btn on" id="tab-shop-btn" onclick="switchTab('shop')">🛍️ Shop</button>
+          <button class="tab-btn"    id="tab-mine-btn" onclick="switchTab('mine')">🎒 My Rewards</button>
+        </div>
+
+        <!-- SHOP TAB -->
+        <div class="tab-panel on" id="tab-shop">
+          <div class="filter-row" id="type-filter">
+            <div class="chip on" data-type="All"          onclick="filterType(this)">✨ All</div>
+            <div class="chip"   data-type="avatar_frame"  onclick="filterType(this)">🖼 Avatar Frames</div>
+            <div class="chip"   data-type="badge"         onclick="filterType(this)">🏅 Badges</div>
+            <div class="chip"   data-type="banner"        onclick="filterType(this)">🎨 Banners</div>
+          </div>
+          <div class="reward-grid" id="reward-grid">
+            <div class="loading-pulse"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div>
+          </div>
+        </div>
+
+        <!-- MY REWARDS TAB -->
+        <div class="tab-panel" id="tab-mine">
+          <div id="my-rewards-list">
+            <div class="loading-pulse"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts" class="toasts"></div>
+
+  <script>
+    // ── State ──
+    let allRewards = [];
+    let currentFilter = 'All';
+    let currentTab = 'shop';
+
+    // ── Tab switching ──
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+      document.getElementById(`tab-${tab}`).classList.add('on');
+      document.getElementById(`tab-${tab}-btn`).classList.add('on');
+      if (tab === 'mine') loadMyRewards();
+    }
+
+    // ── Filter by type ──
+    function filterType(el) {
+      document.querySelectorAll('#type-filter .chip').forEach(c => c.classList.remove('on'));
+      el.classList.add('on');
+      currentFilter = el.dataset.type;
+      renderRewards();
+    }
+
+    // ── Type helpers ──
+    function typeEmoji(type) {
+      if (type === 'avatar_frame') return '🖼';
+      if (type === 'badge')        return '🏅';
+      if (type === 'banner')       return '🎨';
+      return '⭐';
+    }
+    function typeClass(type) {
+      if (type === 'avatar_frame') return 'ri-frame';
+      if (type === 'badge')        return 'ri-badge';
+      return 'ri-banner';
+    }
+    function typeName(type) {
+      if (type === 'avatar_frame') return 'Avatar Frame';
+      if (type === 'badge')        return 'Badge';
+      return 'Banner';
+    }
+
+    // ── Render reward grid ──
+    function renderRewards() {
+      const grid = document.getElementById('reward-grid');
+      const list = currentFilter === 'All' ? allRewards : allRewards.filter(r => r.type === currentFilter);
+
+      if (!list.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-title">No rewards found</div></div>`;
+        return;
+      }
+
+      grid.innerHTML = list.map(r => {
+        const badges = [];
+        if (r.is_redeemed)  badges.push(`<span class="rbadge rb-redeemed">✓ Redeemed</span>`);
+        if (r.is_equipped)  badges.push(`<span class="rbadge rb-equipped">⚡ Equipped</span>`);
+
+        let actionBtns = '';
+        if (!r.is_redeemed) {
+          actionBtns = `<button class="btn btn-gold" id="redeem-btn-${r.id}" onclick="redeem(${r.id})">⭐ Redeem</button>`;
+        } else {
+          const eLabel = r.is_equipped ? '✓ Unequip' : '⚡ Equip';
+          actionBtns = `<button class="btn btn-ghost" id="equip-btn-${r.id}" onclick="equip(${r.id})">${eLabel}</button>`;
+        }
+
+        return `
+        <div class="reward-card ${r.is_redeemed ? 'redeemed' : ''} ${r.is_equipped ? 'equipped' : ''}" id="card-${r.id}">
+          <div class="reward-icon ${typeClass(r.type)}">${typeEmoji(r.type)}</div>
+          <div class="reward-name">${r.name}</div>
+          <div class="reward-desc">${r.description || typeName(r.type)}</div>
+          <div class="reward-cost">⭐ ${r.cost.toLocaleString()} pts</div>
+          ${badges.length ? `<div class="reward-badges">${badges.join('')}</div>` : ''}
+          <div class="reward-actions">${actionBtns}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Render My Rewards ──
+    function renderMyRewards(list) {
+      const container = document.getElementById('my-rewards-list');
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">🎒</div><div class="empty-title">No rewards yet</div><p>Head to the Shop tab to redeem your first reward!</p></div>`;
+        return;
+      }
+      container.innerHTML = list.map(r => `
+        <div class="my-reward-item ${r.is_equipped ? 'equipped' : ''}" id="my-card-${r.id}">
+          <div class="my-ri-icon ${typeClass(r.type)}">${typeEmoji(r.type)}</div>
+          <div class="my-ri-info">
+            <div class="my-ri-name">${r.name}</div>
+            <div class="my-ri-meta">${typeName(r.type)} · Redeemed ${new Date(r.redeemed_at).toLocaleDateString()}</div>
+          </div>
+          ${r.is_equipped ? '<span class="rbadge rb-equipped">⚡ Equipped</span>' : ''}
+          <button class="btn btn-ghost btn-sm" onclick="equip(${r.id})">${r.is_equipped ? 'Unequip' : 'Equip'}</button>
+        </div>`).join('');
+    }
+
+    // ── Actions ──
+    async function redeem(rewardId) {
+      if (!Auth.isAuthenticated()) return showToast('Please log in first', 'e');
+      const btn = document.getElementById(`redeem-btn-${rewardId}`);
+      if (btn) { btn.disabled = true; btn.textContent = 'Redeeming…' }
+
+      const res = await PointShop.redeemReward(rewardId);
+      if (res) {
+        showToast(`Reward redeemed! −${res.points_spent} pts`, 's');
+        await loadAll();
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = '⭐ Redeem' }
+      }
+    }
+
+    async function equip(rewardId) {
+      if (!Auth.isAuthenticated()) return showToast('Please log in first', 'e');
+      const res = await PointShop.equipReward(rewardId);
+      if (res) {
+        showToast(res.message, 's');
+        await loadAll();
+        if (currentTab === 'mine') loadMyRewards();
+      }
+    }
+
+    // ── Load data ──
+    async function loadAll() {
+      if (!Auth.isAuthenticated()) {
+        document.getElementById('reward-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔒</div><div class="empty-title">Log in to browse the shop</div></div>`;
+        return;
+      }
+
+      const [ptsData, rewards] = await Promise.all([
+        PointShop.getPoints(),
+        PointShop.getRewards()
+      ]);
+
+      if (ptsData) {
+        const pts = ptsData.points;
+        document.getElementById('pts-display').textContent = pts.toLocaleString();
+        document.getElementById('tb-pts').textContent      = pts.toLocaleString();
+        animateCounter('pts-display', 0, pts);
+      }
+
+      if (rewards) {
+        allRewards = rewards;
+        const redeemed = rewards.filter(r => r.is_redeemed);
+        const equipped  = rewards.filter(r => r.is_equipped);
+        document.getElementById('stat-redeemed').textContent = redeemed.length;
+        document.getElementById('stat-equipped').textContent  = equipped.length;
+        renderRewards();
+      }
+    }
+
+    async function loadMyRewards() {
+      if (!Auth.isAuthenticated()) return;
+      const list = await PointShop.getMyRewards();
+      if (list) renderMyRewards(list);
+    }
+
+    // ── Animated counter ──
+    function animateCounter(id, from, to) {
+      const el = document.getElementById(id);
+      if (!el || to === 0) return;
+      const duration = 800;
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(from + (to - from) * eased).toLocaleString();
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAll);
+  </script>
+</body>
+</html>
