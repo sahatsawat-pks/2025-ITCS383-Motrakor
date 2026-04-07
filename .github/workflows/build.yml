@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: [ develop, master ]
+    branches: [ develop, master, Handover ]
   pull_request:
-    branches: [ develop, master ]
+    branches: [ develop, master, Handover ]
 
 jobs:
   build:
