@@ -1,10 +1,20 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
-  // Use 10.0.2.2 for Android emulator testing against local backend
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // Automatically choose localhost based on the platform being tested
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3000/api';
+    } else {
+      return 'http://localhost:3000/api';
+    }
+  }
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
