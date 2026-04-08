@@ -108,9 +108,9 @@ const buyItem = async (req, res) => {
   const buyer_id = req.user.id;
   const { listingId } = req.params;
 
-  const client = await pool.connect();
-
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     const listing = await client.query(
@@ -136,8 +136,8 @@ const buyItem = async (req, res) => {
 
     // Check buyer balance
     const buyerResult = await client.query('SELECT balance FROM users WHERE id = $1', [buyer_id]);
-    const buyerBalance = parseFloat(buyerResult.rows[0].balance);
-    const itemPrice = parseFloat(price);
+    const buyerBalance = Number.parseFloat(buyerResult.rows[0].balance);
+    const itemPrice = Number.parseFloat(price);
 
     if (buyerBalance < itemPrice) {
       await client.query('ROLLBACK');
@@ -182,11 +182,17 @@ const buyItem = async (req, res) => {
       price: itemPrice
     });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) {
+      try { 
+        await client.query('ROLLBACK'); 
+      } catch (error_) { 
+        console.error('Rollback error', error_);
+      }
+    }
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 };
 

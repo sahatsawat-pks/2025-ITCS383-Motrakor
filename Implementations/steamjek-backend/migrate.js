@@ -1,6 +1,6 @@
 const pool = require('./db');
-const fs = require('fs');
-const path = require('path');
+const fs = require("node:fs");
+const path = require("node:path");
 
 async function migrate() {
   try {

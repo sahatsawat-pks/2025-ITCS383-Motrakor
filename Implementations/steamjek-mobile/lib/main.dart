@@ -241,11 +241,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final res = await ApiService.login(_email.text, _password.text);
     if (res['token'] != null) {
       await ApiService.saveToken(res['token']);
-      if (mounted)
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const MainScreen()),
         );
+      }
     }
   }
 
@@ -323,11 +324,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     await ApiService.register(_name.text, _email.text, _password.text);
-    if (mounted)
+    if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
+    }
   }
 
   @override
@@ -691,11 +693,12 @@ class ProfileScreen extends StatelessWidget {
           style: ElevatedButton.styleFrom(backgroundColor: SteamJekTheme.red),
           onPressed: () async {
             await ApiService.clearToken();
-            if (context.mounted)
+            if (context.mounted) {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
               );
+            }
           },
           child: const Text('LOGOUT'),
         ),

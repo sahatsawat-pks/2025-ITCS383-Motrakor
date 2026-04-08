@@ -10,6 +10,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: steamjek_test
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,12 +39,27 @@ jobs:
           cd Implementations/steamjek-backend
           npm ci
 
+      - name: Initialize Database
+        env:
+          PGPASSWORD: password
+        run: |
+          psql -h localhost -U user -d steamjek_test -f Implementations/steamjek-backend/db/seed_data.sql
+
       - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: steamjek_test
+          DB_USER: user
+          DB_PASSWORD: password
+          JWT_SECRET: test_secret
+          STRIPE_SECRET_KEY: sk_test_4eC39HqLyjWDarjtT1zdp7dc
         run: |
           cd Implementations/steamjek-backend
-          npm test || echo "No tests"
+          npm run test:coverage
 
       - name: SonarCloud Scan
+        if: always()
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

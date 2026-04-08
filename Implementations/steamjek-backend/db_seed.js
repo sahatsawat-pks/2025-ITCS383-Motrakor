@@ -20,21 +20,20 @@ async function seed() {
         ('Charlie Gamer', 'charlie@example.com', $1, '789 Play Rd', 250.00)
       RETURNING id, name
     `, [hashedPassword]);
-    const aliceId = users.rows[0].id;
     const bobId = users.rows[1].id;
     const charlieId = users.rows[2].id;
 
     // Create 10 Games with Various Prices
     console.log('Creating 10 games catalog...');
     const gamesData = [
-      ['Nebula Siege', 'Epic space battles in a procedurally generated universe.', 'Action', 0.00, '🚀', '12+', true],
-      ['Portal 2', 'Mind-bending puzzles with portals.', 'Puzzle', 10.00, '🌀', 'E', true],
+      ['Nebula Siege', 'Epic space battles in a procedurally generated universe.', 'Action', 0, '🚀', '12+', true],
+      ['Portal 2', 'Mind-bending puzzles with portals.', 'Puzzle', 10, '🌀', 'E', true],
       ['Cyberpunk 2077', 'Open-world action-adventure set in Night City.', 'RPG', 59.99, '🌃', '18+', true],
       ['Stardew Valley', 'Build your dream farm and restore the valley.', 'Simulation', 14.99, '🌱', 'E', true],
       ['Elden Ring', 'Rise, Tarnished, and be guided by grace.', 'RPG', 59.99, '⚔️', 'M', true],
       ['Hades', 'Defy the god of the dead as you hack and slash out of the Underworld.', 'Rogue-like', 24.99, '🔥', '12+', true],
       ['Terraria', 'Dig, fight, explore, build! Nothing is impossible.', 'Sandbox', 9.99, '🌳', 'E10+', true],
-      ['Dota 2', 'The most-played game on Steam.', 'MOBA', 0.00, '⚔️', '12+', true],
+      ['Dota 2', 'The most-played game on Steam.', 'MOBA', 0, '⚔️', '12+', true],
       ['The Witcher 3', 'Hunt the child of prophecy in an open world.', 'RPG', 39.99, '🐺', '18+', true],
       ['Celeste', 'Help Madeline survive her inner demons on her journey to the top of Celeste Mountain.', 'Platformer', 19.99, '🍓', 'E10+', true]
     ];
@@ -49,7 +48,7 @@ async function seed() {
       gameIds.push(res.rows[0].id);
     }
 
-    const [nebulaId, portalId, cyberpunkId, stardewId, eldenId, hadesId, terrariaId, dotaId, witcherId, celesteId] = gameIds;
+    const [nebulaId, portalId, , stardewId, , , terrariaId, dotaId, , ] = gameIds;
 
     // Create Item Types for some of these games
     console.log('Creating item types...');

@@ -36,11 +36,11 @@ async function runSmokeTest() {
   }
 }
 
-// Check if we should use global fetch or node-fetch
-if (typeof fetch === 'undefined') {
+// Check if we should use globalThis fetch or node-fetch
+if (fetch === undefined) {
   try {
     const nodeFetch = require('node-fetch');
-    global.fetch = nodeFetch;
+    globalThis.fetch = nodeFetch;
     runSmokeTest();
   } catch (e) {
     console.error('fetch is not available. Please install node-fetch or use Node 18+');

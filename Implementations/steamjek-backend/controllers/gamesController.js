@@ -85,7 +85,7 @@ const downloadGame = async (req, res) => {
       return res.status(404).json({ message: 'Game not found' });
     }
     const game = result.rows[0];
-    res.setHeader('Content-Disposition', `attachment; filename="${game.title.replace(/\s+/g, '_')}.txt"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${game.title.replaceAll(/\s+/g, '_')}.txt"`);
     res.setHeader('Content-Type', 'text/plain');
     res.send(game.title);
   } catch (err) {

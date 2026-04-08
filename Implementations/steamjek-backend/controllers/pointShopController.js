@@ -38,7 +38,7 @@ const getRewards = async (req, res) => {
 // POST /api/points/redeem/:rewardId
 const redeemReward = async (req, res) => {
   const user_id = req.user.id;
-  const reward_id = parseInt(req.params.rewardId);
+  const reward_id = Number.parseInt(req.params.rewardId);
   try {
     // Fetch reward cost
     const rewardRes = await pool.query('SELECT * FROM point_rewards WHERE id = $1', [reward_id]);
@@ -75,7 +75,7 @@ const redeemReward = async (req, res) => {
 // POST /api/points/equip/:rewardId — toggle equip (unequip others of same type)
 const equipReward = async (req, res) => {
   const user_id = req.user.id;
-  const reward_id = parseInt(req.params.rewardId);
+  const reward_id = Number.parseInt(req.params.rewardId);
   try {
     // Find user_reward entry
     const urRes = await pool.query(

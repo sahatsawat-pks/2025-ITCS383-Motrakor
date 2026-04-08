@@ -1,25 +1,23 @@
 // Determine base URL dynamically depending on whether we're on Vercel or localhost
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+const isLocalhost = globalThis.location.hostname === 'localhost' || globalThis.location.hostname === '127.0.0.1' || globalThis.location.protocol === 'file:';
 const API_BASE_URL = isLocalhost ? 'http://localhost:3000/api' : '/api';
 
 // Utility for making authenticated fetch requests
 async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('steamjek_token');
   
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const customHeaders = options.headers || {};
+  const headers = { 'Content-Type': 'application/json', ...customHeaders };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    const fetchOptions = { ...options };
+    fetchOptions.headers = headers;
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
 
     const data = await response.json();
 
@@ -45,13 +43,14 @@ const Auth = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      if (data && data.token) {
+      if (data?.token) {
         localStorage.setItem('steamjek_token', data.token);
         localStorage.setItem('steamjek_user', JSON.stringify(data.user));
         updateSidebarUser();
         return data;
       }
     } catch (err) {
+      console.error("Login Error:", err);
       return null; // Return null on failure instead of crashing the app silently
     }
   },
@@ -64,6 +63,7 @@ const Auth = {
       });
       return data;
     } catch (err) {
+      console.error("Auth error:", err);
       return null;
     }
   },
@@ -71,7 +71,7 @@ const Auth = {
   logout: () => {
     localStorage.removeItem('steamjek_token');
     localStorage.removeItem('steamjek_user');
-    window.location.href = 'page1_store.html';
+    globalThis.location.href = 'page1_store.html';
   },
 
   getUser: () => {
@@ -88,7 +88,8 @@ const Auth = {
         updateSidebarUser();
       }
       return user;
-    } catch(err) {
+    } catch (err) {
+      console.error("Auth error:", err);
       return null;
     }
   },
@@ -123,7 +124,7 @@ const Auth = {
       showToast('Successfully logged in!', 's');
       document.getElementById('g-login-password').value = '';
       setTimeout(() => {
-        if (window.initPage) { window.initPage(); } else { window.location.reload(); }
+        if (globalThis.initPage) { globalThis.initPage(); } else { globalThis.location.reload(); }
       }, 500);
     }
   },
@@ -140,8 +141,8 @@ const Auth = {
       const loginRes = await Auth.login(email, pass);
       if (loginRes) {
         Auth.closeModal();
-        if (window.initPage) window.initPage();
-        else window.location.reload();
+        if (globalThis.initPage) globalThis.initPage();
+        else globalThis.location.reload();
       }
     }
   }
@@ -161,7 +162,7 @@ function updateSidebarUser() {
         <div class="u-av">${initials}</div>
         <div>
           <div class="u-name">${user.name}</div>
-          <div class="u-bal">$${parseFloat(user.balance || 0).toFixed(2)}</div>
+          <div class="u-bal">$${Number.parseFloat(user.balance || 0).toFixed(2)}</div>
         </div>
       </div>`;
   } else {
@@ -256,14 +257,14 @@ const Library = {
       return false;
     }
     const blob = await resp.blob();
-    const url = window.URL.createObjectURL(blob);
+    const url = globalThis.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `game_${gameId}.txt`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    window.URL.revokeObjectURL(url);
+    globalThis.URL.revokeObjectURL(url);
     return true;
   }
 };
@@ -376,7 +377,7 @@ function injectAuthModal() {
   `;
   document.head.appendChild(style);
 }
-window.addEventListener('DOMContentLoaded', injectAuthModal);
+globalThis.addEventListener('DOMContentLoaded', injectAuthModal);
 
 
 // Inject hamburger icon and responsive sidebar toggle logic
@@ -464,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hamburger.className = 'hamburger-btn';
     
     hamburger.onclick = () => {
-      const isMobile = window.innerWidth <= 800;
+      const isMobile = globalThis.innerWidth <= 800;
       if (isMobile) {
         layout.classList.toggle('sidebar-active');
         layout.classList.remove('sidebar-hidden');
@@ -476,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Close sidebar on mobile when clicking the main content area overlay
     document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 800 && layout.classList.contains('sidebar-active')) {
+      if (globalThis.innerWidth <= 800 && layout.classList.contains('sidebar-active')) {
          if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
            layout.classList.remove('sidebar-active');
          }
@@ -487,11 +488,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const wrap = document.createElement('div');
       wrap.style.display = 'flex';
       wrap.style.alignItems = 'center';
-      titleDiv.parentNode.insertBefore(wrap, titleDiv);
+      titleDiv.before(wrap);
       wrap.appendChild(hamburger);
       wrap.appendChild(titleDiv);
     } else {
-      topbar.insertBefore(hamburger, topbar.firstChild);
+      topbar.prepend(hamburger);
     }
   }
 });
