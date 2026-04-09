@@ -28,6 +28,30 @@ Based on the Point Shop and Community Features, the following 8 Change Requests 
 
 <br>
 
+| Attribute | Description |
+| :--- | :--- |
+| **Associated Feature** | Continuous Integration (CI) Test Suite |
+| **Description** | Jest tests pass but throw an Exit Code 1 because PostgreSQL database `TCPWRAP` handles remain open in memory. Added global `pool.end()` lifecycle hook in `tests/setup.js`. |
+| **Maintenance Type** | Corrective |
+| **Priority** | High |
+| **Severity** | Major |
+| **Time to Implement** | 0.5 person-weeks |
+| **Verification Method** | GitHub Actions Pipeline Exit Code Verification |
+
+<br>
+
+| Attribute | Description |
+| :--- | :--- |
+| **Associated Feature** | UI Accessibility / Web Contrast |
+| **Description** | Foreground color contrasts failed WCAG validation (e.g., `#a78bfa` text on bright backgrounds in page 4/7). Corrected non-compliant values to strict `#ffffff`. |
+| **Maintenance Type** | Corrective |
+| **Priority** | Medium |
+| **Severity** | Minor (Accessibility Compliance) |
+| **Time to Implement** | 0.25 person-weeks |
+| **Verification Method** | SonarQube Static Analysis & WCAG Accessibility Checks |
+
+<br>
+
 ## Adaptive Changes
 
 | Attribute | Description |
@@ -51,6 +75,18 @@ Based on the Point Shop and Community Features, the following 8 Change Requests 
 | **Severity** | Critical |
 | **Time to Implement** | 1.5 person-weeks |
 | **Verification Method** | Database migration verification and integration testing |
+
+<br>
+
+| Attribute | Description |
+| :--- | :--- |
+| **Associated Feature** | Edge Database Connectivity |
+| **Description** | Serverless Edge deployments returning a 500 error on Vercel endpoints due to missing `ws` WebSocket dependency required natively by `@neondatabase/serverless` package. Installed `ws` dependency in the root. |
+| **Maintenance Type** | Adaptive |
+| **Priority** | Critical |
+| **Severity** | Critical (Deployment Block) |
+| **Time to Implement** | 0.25 person-weeks |
+| **Verification Method** | API Route Endpoint testing on the Vercel Production Environment |
 
 <br>
 
@@ -80,6 +116,18 @@ Based on the Point Shop and Community Features, the following 8 Change Requests 
 
 <br>
 
+| Attribute | Description |
+| :--- | :--- |
+| **Associated Feature** | Global CSS maintainability |
+| **Description** | CSS duplication detected (sonar.cpd metrics) across details pages (`page2_game_detail.html` etc). Consolidated redundant layout constraints (`.detail-hero`, `.btn-gold`) into the unified `shared.css`. |
+| **Maintenance Type** | Perfective |
+| **Priority** | Medium |
+| **Severity** | Minor |
+| **Time to Implement** | 0.5 person-weeks |
+| **Verification Method** | SonarQube CPD (Code Profile Duplication) Analysis |
+
+<br>
+
 ## Preventive Changes
 
 | Attribute | Description |
@@ -103,4 +151,27 @@ Based on the Point Shop and Community Features, the following 8 Change Requests 
 | **Severity** | Moderate |
 | **Time to Implement** | 0.5 person-weeks |
 | **Verification Method** | Database query profiling (EXPLAIN plans) and inspection |
+
+
+| Attribute | Description |
+| :--- | :--- |
+| **Associated Feature** | Transaction Rollback Exceptions |
+| **Description** | Refactored `client.query('ROLLBACK')` to properly catch exception variable (`error_`) to prevent potentially catastrophic unhandled promise rejections triggering memory leaks or silent failures natively. |
+| **Maintenance Type** | Preventive |
+| **Priority** | High |
+| **Severity** | Major |
+| **Time to Implement** | 0.25 person-weeks |
+| **Verification Method** | Debugging inspection and server logs |
+
+<br>
+
+| Attribute | Description |
+| :--- | :--- |
+| **Associated Feature** | Codebase Hygiene (Dangling Scrips) |
+| **Description** | Permanent removal of `try_listing.js` and `try_query.js` (throwing async IIFE warnings). Deleting experimental root files prevents inadvertent deployment execution and SonarQube quality drops ("top-level await" risks). |
+| **Maintenance Type** | Preventive |
+| **Priority** | Low |
+| **Severity** | Minor |
+| **Time to Implement** | 0.25 person-weeks |
+| **Verification Method** | File tree evaluation |
 
